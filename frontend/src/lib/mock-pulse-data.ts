@@ -1,118 +1,5 @@
 import type { PulseReport } from "@/types/pulse";
 
-export const MOCK_REPORTS: PulseReport[] = [
-  {
-    id: "rpt-001",
-    title: "Weekly 1-on-1 Coaching Summary",
-    agent_name: "1-on-1 Coach",
-    category: "People & Culture",
-    status: "focus",
-    preview: "Summary of coaching sessions this week. 3 direct reports had 1-on-1s, with key themes around career development and project blockers.",
-    markdown: `# Weekly 1-on-1 Coaching Summary\n\n## Overview\n3 direct reports had 1-on-1 coaching sessions this week.\n\n## Key Themes\n- Career development discussions with Sarah and Mike\n- Project blockers identified for the Q2 initiative\n- Wellbeing check-in with David showed positive trends\n\n## Action Items\n1. Follow up with Sarah on her L&D plan\n2. Schedule time with Mike to remove project blockers\n3. Share wellbeing resources with the team\n\n## Recommendations\nConsider scheduling a team retrospective to address the common project blockers as a group.`,
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(),
-  },
-  {
-    id: "rpt-002",
-    title: "Meeting Load Analysis — May 2026",
-    agent_name: "Meeting Analyst",
-    category: "Meetings",
-    status: "focus",
-    preview: "You spent 23.5 hours in meetings this week, which is 15% above your target. Recurring meetings account for 68% of total meeting time.",
-    markdown: `# Meeting Load Analysis — May 2026\n\n## Summary\n- Total meeting hours: 23.5 hrs\n- Target: 20 hrs/week\n- Over by: 15%\n\n## Breakdown\n- Recurring meetings: 16 hrs (68%)\n- Ad-hoc meetings: 5.5 hrs (23%)\n- External meetings: 2 hrs (9%)\n\n## Top Time Consumers\n1. Weekly Team Standup — 3 hrs/week\n2. Sprint Planning — 2.5 hrs/week\n3. Cross-team Sync — 2 hrs/week\n\n## Recommendations\n- Consider reducing Sprint Planning duration\n- Evaluate if the cross-team sync is still needed weekly`,
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-  },
-  {
-    id: "rpt-003",
-    title: "Team Wellness Score Report",
-    agent_name: "Wellness Tracker",
-    category: "Wellness",
-    status: "unread",
-    preview: "Team wellness score is at 7.2/10, down from 7.8 last month. Key drivers: increased after-hours work and meeting fatigue.",
-    markdown: `# Team Wellness Score Report\n\n## Overall Score: 7.2 / 10\nDown from 7.8 last month\n\n## Key Drivers\n- After-hours work increased by 22%\n- Meeting fatigue score: 4.1/10\n- Work-life balance rating: 6.5/10\n\n## Individual Highlights\n- 2 team members flagged for burnout risk\n- 4 team members working past 7pm regularly\n\n## Recommendations\n1. Implement no-meeting Wednesdays\n2. Set expectations on after-hours communication\n3. Schedule 1-on-1 wellness check-ins`,
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 23).toISOString(),
-  },
-  {
-    id: "rpt-004",
-    title: "Performance Review Preparation Pack",
-    agent_name: "Performance Coach",
-    category: "People & Culture",
-    status: "unread",
-    preview: "Preparation materials for upcoming performance reviews. Includes peer feedback summaries, goal progress, and development areas.",
-    markdown: `# Performance Review Preparation Pack\n\n## Direct Reports: 5\nReviews Due: By May 30, 2026\n\n## Sarah Chen\n- Goal completion: 85%\n- Peer feedback: Strong collaboration skills\n- Development area: Delegation\n\n## Mike Torres\n- Goal completion: 92%\n- Peer feedback: Technical leadership\n- Development area: Communication with stakeholders\n\n## David Park\n- Goal completion: 70%\n- Peer feedback: Reliable, consistent performer\n- Development area: Taking initiative\n\n## Key Themes Across Reviews\n- Need for clearer career paths\n- Desire for more cross-functional exposure`,
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 47).toISOString(),
-  },
-  {
-    id: "rpt-005",
-    title: "External Meeting Compliance Check",
-    agent_name: "Compliance Monitor",
-    category: "Compliance",
-    status: "unread",
-    preview: "3 external meetings flagged for compliance review. Ensure proper NDAs and data handling procedures are in place.",
-    markdown: `# External Meeting Compliance Check\n\n## Flagged Meetings: 3\n\n## Meeting 1: Vendor Demo — Acme Corp\n- Date: May 8, 2026\n- Status: NDA on file ✓\n- Concern: None\n\n## Meeting 2: Partnership Discussion — TechCo\n- Date: May 9, 2026\n- Status: NDA expired ⚠️\n- Concern: Renew NDA before next meeting\n\n## Meeting 3: Investor Call — Growth Fund\n- Date: May 10, 2026\n- Status: No NDA on file ❌\n- Concern: High priority — schedule NDA signing immediately\n\n## Action Items\n1. Renew NDA with TechCo by May 15\n2. Initiate NDA with Growth Fund before next call\n3. Review all upcoming external meetings for compliance`,
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
-    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 71).toISOString(),
-  },
-  {
-    id: "rpt-006",
-    title: "Q1 Meeting Effectiveness Report",
-    agent_name: "Meeting Analyst",
-    category: "Meetings",
-    status: "archived",
-    preview: "Q1 meeting effectiveness score: 6.4/10. 42% of meetings lacked a clear agenda. Recommendations for Q2 improvement included.",
-    markdown: `# Q1 Meeting Effectiveness Report\n\n## Overall Effectiveness: 6.4 / 10\n\n## Key Metrics\n- Meetings with agenda: 58%\n- Average attendees: 6.2\n- Meetings ending early: 23%\n- Follow-up actions documented: 45%\n\n## Trends\n- Meeting volume increased 12% vs Q4\n- Effectiveness decreased from 7.1 in Q4\n- Largest drop in cross-functional meetings\n\n## Q2 Recommendations\n1. Mandate agendas for all meetings > 30 min\n2. Cap attendees at 7 for decision-making meetings\n3. Implement meeting feedback pulse surveys`,
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
-    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 29).toISOString(),
-  },
-  {
-    id: "rpt-007",
-    title: "Employee Engagement Pulse — April",
-    agent_name: "Wellness Tracker",
-    category: "Wellness",
-    status: "archived",
-    preview: "April engagement pulse results: overall engagement at 72%, up 3% from March. Recognition and growth opportunities are top drivers.",
-    markdown: `# Employee Engagement Pulse — April 2026\n\n## Overall Engagement: 72% (+3% vs March)\n\n## Top Drivers\n1. Recognition from managers (+8%)\n2. Growth opportunities (+5%)\n3. Team collaboration (+4%)\n\n## Areas for Improvement\n- Workload management: -2%\n- Cross-team communication: -1%\n\n## Department Breakdown\n- Engineering: 78%\n- Product: 74%\n- Design: 71%\n- Marketing: 65%`,
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 35).toISOString(),
-    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 34).toISOString(),
-  },
-  {
-    id: "rpt-008",
-    title: "Workload Distribution Analysis",
-    agent_name: "Performance Coach",
-    category: "People & Culture",
-    status: "focus",
-    preview: "Workload imbalance detected: 2 team members at 120% capacity while 3 are underutilized at 60%. Redistribution recommendations provided.",
-    markdown: `# Workload Distribution Analysis\n\n## Team Capacity Overview\n- Average utilization: 85%\n- Over capacity (>100%): 2 members\n- Underutilized (<70%): 3 members\n\n## Detailed Breakdown\n\n### Over Capacity\n- Sarah Chen: 120% — handling 3 projects solo\n- Alex Kim: 115% — covering for vacant role\n\n### Underutilized\n- Jordan Lee: 60% — between projects\n- Pat Murphy: 55% — waiting on dependencies\n- Sam Rivera: 65% — project completed early\n\n## Recommendations\n1. Redistribute Alex's overflow to Jordan\n2. Pair Sam with Sarah on the initiative\n3. Review Pat's project pipeline for early starts`,
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
-    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 7).toISOString(),
-  },
-  {
-    id: "rpt-009",
-    title: "Stakeholder Alignment Report",
-    agent_name: "Compliance Monitor",
-    category: "Compliance",
-    status: "focus",
-    preview: "Stakeholder alignment score: 78%. Key misalignments identified between Product and Engineering on Q2 priorities.",
-    markdown: `# Stakeholder Alignment Report\n\n## Overall Alignment Score: 78%\n\n## Key Misalignments\n1. Product vs Engineering on Q2 priorities (score: 62%)\n2. Design vs Marketing on brand guidelines (score: 68%)\n3. Leadership vs ICs on remote work policy (score: 71%)\n\n## Aligned Areas\n- Revenue targets: 92% alignment\n- Customer focus: 88% alignment\n- Technical direction: 85% alignment\n\n## Action Items\n1. Schedule Product-Engineering alignment session\n2. Create shared brand guidelines document\n3. Survey team on remote work preferences`,
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 11).toISOString(),
-  },
-  {
-    id: "rpt-010",
-    title: "Monthly Meeting Cost Analysis",
-    agent_name: "Meeting Analyst",
-    category: "Meetings",
-    status: "unread",
-    preview: "Estimated meeting cost for May: $47,200. Highest cost meetings identified with recommendations to optimize.",
-    markdown: `# Monthly Meeting Cost Analysis — May 2026\n\n## Total Estimated Cost: $47,200\n\n## Top 5 Most Expensive Meetings\n1. All-Hands (120 attendees × 1hr) — $8,400\n2. Sprint Planning (15 attendees × 2.5hr) — $5,625\n3. Cross-team Sync (20 attendees × 1.5hr) — $4,500\n4. Weekly Standup (12 attendees × 0.5hr × 4) — $3,600\n5. Design Review (8 attendees × 1hr × 3) — $3,600\n\n## Cost Optimization\n- Replace All-Hands with async update: Save $8,400\n- Reduce Sprint Planning to 1.5hr: Save $3,375\n- Bi-weekly Cross-team Sync: Save $2,250`,
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 10).toISOString(),
-    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 9).toISOString(),
-  },
-];
-
 export const REPORT_CATEGORIES = [
   "People & Culture",
   "Meetings",
@@ -122,16 +9,151 @@ export const REPORT_CATEGORIES = [
 
 export type ReportCategory = (typeof REPORT_CATEGORIES)[number];
 
-export const CATEGORY_COLORS: Record<ReportCategory, string> = {
-  "People & Culture": "bg-blue-100 text-blue-700 border-blue-200",
-  Meetings: "bg-amber-100 text-amber-700 border-amber-200",
-  Wellness: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  Compliance: "bg-purple-100 text-purple-700 border-purple-200",
+export const CATEGORY_COLORS: Record<string, string> = {
+  "People & Culture": "bg-blue-100 text-blue-700",
+  Meetings: "bg-amber-100 text-amber-700",
+  Wellness: "bg-emerald-100 text-emerald-700",
+  Compliance: "bg-purple-100 text-purple-700",
 };
 
-export const CATEGORY_BORDER_COLORS: Record<ReportCategory, string> = {
+export const CATEGORY_BORDER_COLORS: Record<string, string> = {
   "People & Culture": "border-l-blue-500",
   Meetings: "border-l-amber-500",
   Wellness: "border-l-emerald-500",
   Compliance: "border-l-purple-500",
 };
+
+export const MOCK_PULSE_REPORTS: PulseReport[] = [
+  {
+    id: "report-1",
+    title: "1-on-1 Prep: Chris Petersen",
+    agent_name: "1-on-1 Prep Report",
+    category: "People & Culture",
+    status: "focus",
+    preview:
+      "Exceptional response rate (99.2%) and minimal outside-hours impact. Alignment meetings dominate at 49.9% of meeting time.",
+    markdown:
+      "# 1-on-1 Prep Brief: Chris Petersen\n\n## At a Glance\n\n| Metric | Chris | EM Peer Median |\n|--------|-------|----------------|\n| Monthly meeting hours | 62.5 | 66.4 |\n| Response rate | 99.2% | 80.2% |\n| Speedy meeting adoption | 37.3% | 22.7% |\n\n## Strengths\n\n- Exceptional response rate (99.2%)\n- Minimal outside-hours impact\n- Strong speedy meeting adoption\n\n## Patterns\n\n- Meeting load spiked in March (79.4 hrs)\n- Alignment meetings dominate at 49.9%\n- Wednesday is heaviest day (29% of weekly time)",
+    created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
+    updated_at: new Date(Date.now() - 2 * 3600000).toISOString(),
+  },
+  {
+    id: "report-2",
+    title: "Workload Review: Mart Thompson",
+    agent_name: "Workload Analyzer",
+    category: "Meetings",
+    status: "unread",
+    preview:
+      "Mart's meeting load has increased 34% over the past quarter, with back-to-back meetings on Tuesdays and Thursdays.",
+    markdown:
+      "# Workload Review: Mart Thompson\n\n## Meeting Volume\n\n- Weekly meeting hours: 22.4 hrs (peer median: 15 hrs)\n- Back-to-back days: Tuesday, Thursday\n- Focus time: 6 hrs/week (peer median: 12 hrs)\n\n## Recommendations\n\n- Protect focus blocks on Monday and Friday\n- Delegate recurring syncs where possible\n- Consider async updates for standups",
+    created_at: new Date(Date.now() - 6 * 3600000).toISOString(),
+    updated_at: new Date(Date.now() - 6 * 3600000).toISOString(),
+  },
+  {
+    id: "report-3",
+    title: "Team Sentiment Pulse — April",
+    agent_name: "Team Sentiment",
+    category: "People & Culture",
+    status: "unread",
+    preview:
+      "Overall team sentiment is positive (7.2/10). Response rates remain high but meeting overload signals in engineering subgroup.",
+    markdown:
+      "# Team Sentiment Pulse — April\n\n## Overall Score\n\n7.2/10 — Slightly above org average (6.8/10)\n\n## Key Signals\n\n- Positive: Strong cross-team collaboration signals\n- Neutral: Meeting load steady vs. March\n- Concern: Engineering subgroup showing burnout indicators",
+    created_at: new Date(Date.now() - 24 * 3600000).toISOString(),
+    updated_at: new Date(Date.now() - 24 * 3600000).toISOString(),
+  },
+  {
+    id: "report-4",
+    title: "1-on-1 Prep: Damien Nguyen",
+    agent_name: "1-on-1 Prep Report",
+    category: "People & Culture",
+    status: "focus",
+    preview:
+      "Damien maintains excellent 1:1 cadence with zero cancellations. External meetings are well-managed at 15% of total time.",
+    markdown:
+      "# 1-on-1 Prep Brief: Damien Nguyen\n\n## At a Glance\n\n| Metric | Damien | Peer Median |\n|--------|--------|-------------|\n| Monthly meeting hours | 48.2 | 66.4 |\n| External meeting % | 15% | 23.7% |\n| 1:1 cancellation rate | 0% | 12% |\n\n## Strengths\n\n- Zero 1:1 cancellations\n- Low external meeting engagement — focused\n- Strong agenda usage (72%)",
+    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+  },
+  {
+    id: "report-5",
+    title: "Meeting Effectiveness: Q1 Review",
+    agent_name: "Workload Analyzer",
+    category: "Meetings",
+    status: "all",
+    preview:
+      "Large meeting costs have decreased 12% QoQ. Speedy meeting adoption at 28% across the team, up from 19%.",
+    markdown:
+      "# Meeting Effectiveness: Q1 Review\n\n## Key Metrics\n\n- Large meeting cost: Down 12% QoQ\n- Speedy meeting adoption: 28% (up from 19%)\n- Average response rate: 76%\n\n## Trends\n\n- 25-minute format gaining traction\n- Recurring meetings show lower quality scores than ad-hoc",
+    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+  },
+  {
+    id: "report-6",
+    title: "Wellness Check: Jessie Martinez",
+    agent_name: "Team Sentiment",
+    category: "Wellness",
+    status: "unread",
+    preview:
+      "Jessie has 3.2 hours of outside-hours meetings this month and back-to-back clustering on Wednesdays.",
+    markdown:
+      "# Wellness Check: Jessie Martinez\n\n## Outside-Hours Impact\n\n3.2 hours outside work hours this month (vs. 0.5 hrs peer median)\n\n## Calendar Density\n\n- Wednesday: 9.2 hrs in meetings\n- Back-to-back blocks: 4 on Wednesday alone\n- Focus time: 3 hrs/week (peer median: 12 hrs)\n\n## Recommendations\n\n- Revisit Wednesday calendar density\n- Set working hours boundary in calendar",
+    created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 4 * 86400000).toISOString(),
+  },
+  {
+    id: "report-7",
+    title: "Compliance: Fair Meeting Practices",
+    agent_name: "1-on-1 Prep Report",
+    category: "Compliance",
+    status: "all",
+    preview:
+      "All managers meeting the minimum 1:1 cadence requirement. 2 managers have reschedule rates above 50%.",
+    markdown:
+      "# Compliance: Fair Meeting Practices\n\n## 1:1 Coverage\n\n- 100% of managers meeting minimum 1:1 cadence\n- 2 managers with reschedule rates > 50%\n\n## Outside-Hours Policy\n\n- 3 employees with recurring outside-hours meetings\n- All flagged for HR review",
+    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+  },
+  {
+    id: "report-8",
+    title: "1-on-1 Prep: Johnny Walsh",
+    agent_name: "1-on-1 Prep Report",
+    category: "People & Culture",
+    status: "archived",
+    preview:
+      "Johnny's meeting patterns show strong development focus. Ad-hoc meetings are well-structured with 85% agenda usage.",
+    markdown:
+      "# 1-on-1 Prep Brief: Johnny Walsh\n\n## At a Glance\n\n| Metric | Johnny | Peer Median |\n|--------|--------|-------------|\n| Monthly meeting hours | 55.0 | 66.4 |\n| Agenda usage | 85% | 45% |\n| Ad-hoc quality score | 78% | 62% |\n\n## Strengths\n\n- Highest agenda usage in the team\n- Well-structured ad-hoc meetings",
+    created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 7 * 86400000).toISOString(),
+  },
+  {
+    id: "report-9",
+    title: "Burnout Risk Assessment — Engineering",
+    agent_name: "Workload Analyzer",
+    category: "Wellness",
+    status: "all",
+    preview:
+      "3 of 8 engineers in the team showing 2+ burnout indicators. Wednesday is the most overloaded day across the team.",
+    markdown:
+      "# Burnout Risk Assessment — Engineering\n\n## At-Risk Indicators\n\n3 of 8 engineers showing 2+ burnout indicators:\n- Outside-hours meetings\n- Back-to-back clustering\n- Focus time below 5 hrs/week\n\n## Team Patterns\n\n- Wednesday most overloaded day\n- Average meeting load: 22 hrs/week (org median: 15 hrs)",
+    created_at: new Date(Date.now() - 8 * 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 8 * 86400000).toISOString(),
+  },
+  {
+    id: "report-10",
+    title: "Compliance: Meeting Policy Adherence",
+    agent_name: "Workload Analyzer",
+    category: "Compliance",
+    status: "archived",
+    preview:
+      "87% of meetings comply with the 25-minute default policy. Large meetings (8+ attendees) show lower agenda usage at 23%.",
+    markdown:
+      "# Meeting Policy Adherence\n\n## Speedy Meeting Adoption\n\n87% of new meetings use 25-minute format\n\n## Large Meeting Compliance\n\n- Agenda usage for 8+ attendee meetings: 23%\n- Policy requires agenda for all meetings with 10+ attendees\n- 4 meetings non-compliant this month",
+    created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 10 * 86400000).toISOString(),
+  },
+];
+
+export const MOCK_REPORTS = MOCK_PULSE_REPORTS;

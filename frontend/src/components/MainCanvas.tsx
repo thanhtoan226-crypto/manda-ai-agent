@@ -34,19 +34,18 @@ interface MainCanvasProps {
 }
 
 const MODES = [
-  { id: "coaching", label: "Coaching & Support", description: "Mentoring-focused insights" },
-  { id: "performance", label: "Performance Review Prep", description: "Review-ready data" },
-  { id: "workload", label: "Workload Concern", description: "Capacity and burnout signals" },
-  { id: "investigation", label: "Investigation", description: "Deep-dive exploration" },
+  { id: "coaching", label: "Coaching & Support", description: "Strengths-first, warm tone, for growth and wellbeing" },
+  { id: "performance", label: "Performance Review Prep", description: "Evidence-based, balanced, for formal reviews" },
+  { id: "workload", label: "Workload Concern", description: "Volume/trend data, caring but factual, for capacity signals" },
+  { id: "investigation", label: "Investigation", description: "Direct/factual, data-driven, for engagement concerns" },
 ];
 
 const DIRECT_REPORTS = [
-  "Chris Petersen",
-  "Mart",
-  "Damien",
-  "Jessie",
-  "Johnny",
-  "Jackson",
+  "Mart Thompson",
+  "Damien Nguyen",
+  "Jessie Martinez",
+  "Johnny Walsh",
+  "Jackson Lee",
 ];
 
 const TIME_FRAMES = ["Last week", "Last month", "Last quarter", "Last 6 months"];
@@ -600,16 +599,16 @@ function ItemBlock({
                   rowData.cost === "Medium" ? "bg-yellow-100 text-yellow-700" :
                   "bg-green-100 text-green-700"
                 )}>
-                  Cost: {rowData.cost}
+                  Stage: {rowData.cost}
                 </span>
-                <span className="text-xs text-slate-500">Intent: {rowData.intent}</span>
+                <span className="text-xs text-slate-500">Days: {rowData.intent}</span>
                 <span className={cn(
                   "px-1.5 py-0.5 rounded text-xs",
                   rowData.alignment === "High" ? "bg-green-100 text-green-700" :
                   rowData.alignment === "Medium" ? "bg-yellow-100 text-yellow-700" :
                   "bg-red-100 text-red-700"
                 )}>
-                  Alignment: {rowData.alignment}
+                  Probability: {rowData.alignment}
                 </span>
               </div>
             </div>
@@ -655,7 +654,7 @@ function ItemBlock({
           onClick={() =>
             onActionContent(
               itemId,
-              "Data backed for this insight:\n\n- Source: Meeting analytics database\n- Period: Last 30 days\n- Confidence: 92%\n- Sample size: 147 data points\n- Methodology: Peer comparison against team median"
+              "Data backed for this insight:\n\n- Source: MLS + CRM transaction database\n- Period: Last 30 days\n- Confidence: 92%\n- Sample size: 347 data points\n- Methodology: Peer comparison against brokerage median"
             )
           }
           className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 rounded-md transition-colors"
@@ -777,11 +776,11 @@ function ChipContent({ data }: { data: unknown }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200">
-              <th className="text-left py-2 pr-3 text-slate-500 font-medium">Meeting</th>
-              <th className="text-center py-2 px-3 text-slate-500 font-medium">Hours</th>
-              <th className="text-center py-2 px-3 text-slate-500 font-medium">Cost</th>
-              <th className="text-center py-2 px-3 text-slate-500 font-medium">Intent</th>
-              <th className="text-center py-2 pl-3 text-slate-500 font-medium">Alignment</th>
+              <th className="text-left py-2 pr-3 text-slate-500 font-medium">Property</th>
+              <th className="text-center py-2 px-3 text-slate-500 font-medium">Price</th>
+              <th className="text-center py-2 px-3 text-slate-500 font-medium">Stage</th>
+              <th className="text-center py-2 px-3 text-slate-500 font-medium">Days in Stage</th>
+              <th className="text-center py-2 pl-3 text-slate-500 font-medium">Probability</th>
             </tr>
           </thead>
           <tbody>

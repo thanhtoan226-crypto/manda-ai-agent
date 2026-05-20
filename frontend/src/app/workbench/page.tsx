@@ -148,7 +148,7 @@ function WorkbenchContent() {
     if (useMock) {
       const newMock: SessionSummary = {
         id: `mock-session-${Date.now()}`,
-        agent_id: agentId || "agent-1on1",
+        agent_id: agentId || "agent-listing",
         title: "New Session",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -164,7 +164,7 @@ function WorkbenchContent() {
       return;
     }
     try {
-      const detail = await createSession(agentId || "agent-1on1");
+      const detail = await createSession(agentId || "agent-listing");
       setActiveSessionId(detail.id);
       setSessions((prev) => [
         {
@@ -253,7 +253,7 @@ function WorkbenchContent() {
   const handleDrillDown = useCallback(async (chipId: string): Promise<string> => {
     if (useMock) {
       await new Promise((r) => setTimeout(r, 800));
-      return `Drill-down data for ${chipId}:\n\n- Raw data source: Meeting analytics + email metadata\n- Time period: Last 30 days\n- Confidence level: 89%\n- Data points analyzed: 234\n- Last updated: ${new Date().toLocaleString()}`;
+      return `Drill-down data for ${chipId}:\n\n- Raw data source: MLS + CRM transaction data\n- Time period: Last 30 days\n- Confidence level: 92%\n- Data points analyzed: 347\n- Last updated: ${new Date().toLocaleString()}`;
     }
     const result = await fetchDrillDown(chipId);
     return result.content;
@@ -272,14 +272,14 @@ function WorkbenchContent() {
       await new Promise((r) => setTimeout(r, 1200));
 
       const MOCK_ANSWERS: Record<string, string> = {
-        "chip-strengths": "Based on the analysis, the key driver behind these strengths is the consistent investment in strategic alignment through Q4 Planning sessions, combined with a 100% 1-on-1 adherence rate. The data shows Chris's meetings with highest intent-to-alignment ratio are the ones he organizes himself, indicating strong meeting design skills.",
-        "chip-patterns": "The primary driver of this pattern is the 34% increase in reactive ad-hoc meetings over the quarter. These sessions, while individually low-cost, accumulate to consume 5 hours/week and have the lowest alignment scores. The pattern suggests Chris may be acting as a de facto escalation point, which could be addressed through delegation or structured office hours.",
-        "chip-meetings": "The meetings Chris organizes reveal a strategic focus — Q4 Planning and 1-on-1s have high alignment scores. However, the Urgent Ad-hoc sessions (5 hrs/week) represent a reactive pattern with low alignment. Consider: 1) Capping ad-hoc sessions at 2 hrs/week, 2) Converting recurring ad-hocs to scheduled blocks, 3) Delegating response ownership for urgent items.",
-        "chip-starters": "Here are suggested discussion approaches:\n\n1. Meeting load awareness: \"I noticed you're spending 25 hours in meetings vs. the team median of 15. Let's explore which ones are giving you the most leverage.\"\n\n2. Deep work protection: \"Your deep work time has dropped to 4 hours. What would an ideal week look like if we protected 8-10 hours?\"\n\n3. Ad-hoc meeting strategy: \"38% of your meetings are reactive ad-hocs. Could we set up structured office hours to handle these more efficiently?\"",
-        "chip-data": "The data interpretation covers the last 30 days of meeting analytics, cross-referenced with peer benchmarks (team of 8 engineering managers). Key statistical highlights: meeting hours at 83rd percentile, deep work hours at 12th percentile, 1-on-1 coverage at 100% vs. 75% team average.",
+        "chip-strengths": "Based on the analysis, the key driver behind these strengths is Sarah's exceptional pricing strategy combined with her client communication discipline. Her list-to-close ratio of 98.2% comes from accurate initial pricing that minimizes negotiation rounds, while her client satisfaction scores reflect a proactive communication approach where she updates clients even when there's no new development.",
+        "chip-patterns": "The primary driver of the March conversion dip was the 40% spike in new listings without a corresponding increase in follow-up capacity. Sarah was managing 15 active listings during the spring surge, well above her optimal 8-10 range. The data shows conversion efficiency drops sharply above 10 active listings, suggesting a capacity ceiling that could be addressed through a showing assistant or transaction coordinator.",
+        "chip-meetings": "Sarah's active deals reveal a strategic focus on single-family homes, which command higher commissions but take longer to close. The 142 Oak Ridge Dr negotiation has been ongoing for 12 days with a $15K gap — consider proposing a creative compromise such as including closing cost credits. The Harbor View listing at $892K has had only 3 showings in 21 days, suggesting it may be priced above the current market ceiling for the neighborhood.",
+        "chip-starters": "Here are suggested discussion approaches:\n\n1. Pipeline optimization: \"Your pipeline is strong at $2.84M, but the single-family concentration creates longer close cycles. Would shifting 20% of focus to condos improve cash flow velocity?\"\n\n2. Inspection fallout: \"Two deals fell through during inspection contingency in March. Have you considered recommending pre-listing inspections to reduce buyer surprise?\"\n\n3. Showing strategy: \"Your weekday showings convert 3x better than weekend open houses. What if we made weekday private showings the priority and used weekends purely for lead generation?\"",
+        "chip-data": "The data interpretation covers the last 30 days of listing and transaction data from MLS and CRM, cross-referenced with peer benchmarks (team of 12 agents at Horizon Realty Group). Key statistical highlights: closings at 90th percentile, days on market at 15th percentile (lower is better), client satisfaction at 92nd percentile, commission per deal at 78th percentile with volume making up the difference.",
       };
 
-      const answer = MOCK_ANSWERS[chipId] || "Based on the analysis, this observation is supported by multiple data points from the last 30 days. The trend correlates with a shift in meeting patterns that favors responsiveness over focused work time. Implementing structured deep-work blocks and meeting budgets could improve the balance between strategic and reactive time allocation.";
+      const answer = MOCK_ANSWERS[chipId] || "Based on the analysis, this observation is supported by multiple data points from the last 30 days of MLS and CRM transaction data. The trend correlates with seasonal market patterns where spring inventory surges create both opportunity and capacity strain. Implementing a structured pipeline management system with clear follow-up cadences could help maintain conversion quality during high-volume periods.";
 
       const assistantMsg: ChatMessage = {
         id: `msg-ask-reply-${Date.now()}`,

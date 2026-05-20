@@ -1,0 +1,466 @@
+# Feature: AI Agents — Agentic Workbench
+
+## Overview
+
+A two-page app: an **Browse Agents** landing page, **Workbench** and a **Pulse** where users interact with AI agents to generate data-rich reports and view reports, respectively. All AI responses and data are mocked — focus is on complete UI flow and interaction patterns.
+Pulse is report that generated from an AI agent for a specific purpose
+
+---
+
+## Pages & Routes
+
+| Route | Page | Description |
+|-------|------|-------------|
+| `/` | Agent Hub | Browse agents by category, click to enter workbench |
+| `/workbench` | Workbench | New/existing session with agent — conversation, report, and chat panels |
+| `/pulse` | Pulse | Feed of generated reports with categorization, filtering, and pagination |
+| `/pulse/[reportId]` | Report Detail | Read-only view of a single generated report |
+
+---
+
+## Page 1: Browse Agents
+
+The landing page. Displays AI agents as a card carousel, grouped by category.
+
+### Categories (horizontal carousel rows)
+
+- **Your Pulse** — agents the user starred
+- **Most Popularr** — most-used agents across org
+- **People Management** — agents grouped in category "People Management"
+- **Leadership & Strategy** — agents grouped in category "Leadership & Strategy"
+- **Productivity & Efficiency** - agents grouped in category "Productivity & Efficiency"
+- ** Build Your Own ** - Build custom agent (Display tag Coming Soon)
+
+### Agent Card
+
+Each card shows:
+- Agent's category icon
+- Name (e.g., "1-on-1 Prep Report")
+- Last Date generated:
+- Purpose. Format: "For: {Purpose}. Example: For: People Manager.
+- Short description
+- Tags. Example: 1-on-1, Coaching, Benchmarks, Investigation, Monitor, Onboarding, New Hires, etc.
+- Integration: display app icons for integration such as Outlook, Gmail, Slack, Teams
+
+
+### Navigation
+Run
+- Click a button "Run" → redirects to `/details` with that agent pre-selected
+- Past reports for that agent are shown in the 'History' tab
+
+Schedule
+- Click a button "Run" -> open a modal to setup schedule. More details in 
+
+---
+
+## Page 2: Workbench
+
+The workbench where users interact with an AI agent to generate data-rich reports. Accessed by clicking "Run" on an agent card.
+
+Three-panel layout:
+
+```
+┌──────────┬────────────────────────────┬──────────────┐
+│ Session  │                            │  AI Chat     │
+│ History  │     Main Canvas            │  Panel       │
+│ (left)   │     (center)               │  (right)     │
+│          │                            │              │
+│          │                            │              │
+└──────────┴────────────────────────────┴──────────────┘
+```
+
+### Left Tab: Session History
+
+- List of past sessions/reports for the current agent
+- Grouped by date (Today, Yesterday, This Week, Older)
+- Each item: report title, date, preview text
+- **"New Session"** button at top → starts a new conversation
+- Click a past session → loads it in the main canvas
+
+### Center Panel: Main Canvas
+
+Has two view modes (toggled via button in header): **Conversation View** and **Report View**.
+
+#### Center Header
+
+- Session title (left)
+- Excluded items counter badge (e.g. "3 excluded" with eye-off icon) — shows only when items have been excluded
+- **View Mode toggle** button (top right):
+  - In Conversation View → shows "Report View Mode"
+  - In Report View → shows "Conversation View Mode"
+- **Schedule** button
+
+---
+
+### Conversation View Mode
+
+The interactive chat-driven flow for generating a report. This is a guided multi-step conversation where the AI prompts the user for inputs.
+
+#### Step 1: Select a Subject
+
+- User clicks "Run" on an agent card → enters the workbench
+- AI displays: "You have 6 direct reports. Select one to start the report."
+- 6 employee names are displayed as selectable chips/cards
+- User selects one employee
+
+#### Step 2: Select Time Frame
+
+- AI asks: "What time frame would you like to analyze?"
+- User types or selects a time frame (e.g. "Last month", "Last quarter", custom date range)
+
+#### Step 3: Select a Mode
+
+- AI asks the user to choose an intent mode (see [Intent Modes](#intent-modes) below)
+- Each mode changes tone and emphasis in the output, not data depth
+- User selects one or types a custom mode
+
+#### Step 4: Confirm & Generate
+
+- AI confirms the configuration: selected employee + time frame + mode
+- User confirms → AI begins generating structured content
+- Loading pulse animation while generating
+
+#### Step 5: AI Generates Content
+
+The AI response appears as two module cards. Each module shows its Data Interpreter content (metrics table or category list) at the top, with individual insight items as separate blocks underneath.
+
+**Module 1: At a Glance**
+
+- Data Interpreter content: metrics table (metric / value / peer median)
+- Section: **Strengths to Acknowledge** — 4 individual item blocks, each as its own card
+- Section: **Patterns Worth Discussing** — 4 individual item blocks, each as its own card
+
+**Module 2: Calendar Deep-Dive**
+
+- Data Interpreter content: category breakdown list (alignment, supporting individuals, etc.)
+- Section: **Meetings He Organizes** — 7 individual item blocks (one per meeting row), each showing meeting name, frequency, cost badge, intent, and alignment badge
+- Section: **Discussion Starters** — 7 individual item blocks, each showing a quoted discussion prompt
+
+#### Item Block Interactions
+
+Every individual item block has:
+
+- **Item content** (text paragraph for items, or meeting details with badges for table rows)
+- **Unpin toggle** (eye-off / eye icon, top-right of block):
+  - All items are included in Report View by default
+  - Click eye-off icon → item is excluded from the printable report (block becomes dimmed + strikethrough text)
+  - Click eye icon on excluded item → re-include it in the report
+- **Action buttons** (inline at bottom of block):
+  - **Drill down** → generates 1 deeper level of content below the item. Max 1 drill-down level.
+  - **Verify** → generates data-backed evidence for the insight below the item. Dumps raw data.
+  - **Ask a question** → opens a question popup (popover above the button). The popup contains:
+    - A textarea for the user to type their question (auto-focused)
+    - An "Ask" button (disabled until text is entered) and a "Cancel" button
+    - Press Enter to submit, Escape to cancel
+    - On submit: the popup closes and the question + AI-generated answer appear in the right drawer (AI Chat panel). The question is prefixed with the section label (e.g., "[Strengths to Acknowledge] What drives this trend?"). The answer appears after a ~1.2s simulated AI thinking delay.
+
+#### Excluded Items
+
+- Excluded items are tracked by a unique ID: `{moduleId}::{chipId}::{index}`
+- The header badge shows count of excluded items (e.g. "3 excluded" with eye-off icon)
+- Excluded items are visually dimmed (reduced opacity) with strikethrough text
+- Exclusions are reflected in Report View — excluded items are omitted from the printable report
+
+#### Loading States
+
+- When a drill-down or verify action is triggered on an item, that item shows a skeleton/pulse animation before content appears
+- Simulates AI "thinking" delay (~1-2s)
+
+---
+
+### Report View Mode
+
+Triggered by clicking "Report View Mode" button.
+
+#### Transformation
+
+- Chat UI (input bar, message bubbles) is hidden
+- Center canvas becomes a **doc-style layout** (A4 proportions, white background, professional formatting)
+- All content is shown by default; only **excluded** (unpinned) items are omitted
+
+#### Report Structure
+
+```
+Title: 1:1 Prep Brief: Chris Peterson
+├── At a Glance
+│   ├── Metrics Table (always shown)
+│   ├── Strengths to Acknowledge (excluded items omitted)
+│   └── Patterns Worth Discussing (excluded items omitted)
+└── Calendar Deep-Dive
+    ├── Category Breakdown (always shown)
+    ├── Meetings He Organizes (excluded rows omitted)
+    └── Discussion Starters (excluded items omitted)
+```
+
+- All items are included by default — no pin action needed
+- Excluded items are filtered out from the report
+- Data Interpreter content (metrics table, category list) is always shown
+- Text items rendered as bullet lists with accent left border
+- Meeting rows rendered in a table with cost/alignment badges
+
+#### MD File Source
+
+- The report is backed by a Markdown template that the user can view and edit
+- An **"Edit Template"** toggle in the report header switches between rendered view and raw MD editor
+- Changes to the MD are reflected in the rendered report on save
+- The MD file is stored per session (mocked in memory for now)
+
+#### Google Docs Integration
+
+- **"Convert to Google Docs"** button visible only in Report View (top of document)
+- Click → no-op for now (placeholder button, shows a toast "Coming soon")
+
+---
+
+### Right Panel: AI Chat Panel
+
+A persistent chat sidebar on the right, visible in **both** Conversation View and Report View.
+
+#### Purpose
+
+- User can ask the AI follow-up questions about the report in context
+- AI responses appear inline in this panel (streamed, word-by-word)
+- In Report View: user can ask AI to adjust the report, then **confirm** to apply changes to the main document
+
+#### Confirm Flow
+
+1. User asks AI a question (e.g., "Add a section about team sentiment")
+2. AI responds with a proposed change
+3. A **"Apply to Report"** button appears below the AI response
+4. Clicking it updates the center panel (report MD + rendered view)
+5. A subtle confirmation toast appears: "Report updated"
+
+---
+## Intent Modes
+
+Ask the manager to select one of these modes. Each changes tone and emphasis in the output, not data depth.
+
+### Coaching & Support
+
+*"I want to support their growth and wellbeing"*
+
+- Strengths come first, always
+- Findings framed as curious questions: "You might ask...", "Worth exploring..."
+- The direct report is positioned as the expert on their own situation
+- Peer comparison is context, not judgement
+- Tone is warm and empowering
+
+### Performance Review Prep
+
+*"I'm preparing for a formal review conversation"*
+
+- Balanced presentation: strengths then gaps
+- Metrics framed as evidence with trend direction
+- Peer comparison is explicit and evaluative: "In the top/bottom quartile for their role"
+- Language: "The data shows...", "Compared to peers in the same role..."
+- Tone is professional and evidence-based
+
+### Workload Concern
+
+*"I'm worried they're overloaded or underutilised"*
+
+- Lead with volume and trend data
+- Outside-hours meetings, calendar density, and meeting count per week are prominent
+- Frame as "here's what the calendar tells us about their load"
+- Include capacity indicators: focus time blocks, back-to-back meeting days
+- Tone is caring and factual
+
+### Investigation
+
+*"I have concerns about engagement or output"*
+
+- Direct, factual framing - no softening language
+- Patterns stated as observations: "Response rate is X%", "Y meetings declined in the past month"
+- Attendance patterns, response rates, meetings organised (quality and frequency), and participation are prominent
+- No suggested questions - just findings and patterns
+- Tone is neutral and data-driven
+
+---
+## Schedule Feature
+
+On the AI Agent card or Workbench (next to view mode toggle):
+
+- **"Schedule"** button → opens a modal/dialog
+- Fields:
+  - Frequency: Daily, Weekly, Bi-weekly, Monthly, xx minutes Before the meeting - user can edit xx as a text field (number only)
+  - Time
+  - Recipients (text input, comma-separated emails — mock)
+- **Save** → stores the schedule config (mock, in memory), shows toast "Schedule saved"
+- Scheduled reports re-run automatically at the configured interval (not implemented yet — just the UI)
+
+
+## Page 3: Pulse
+
+A report feed page that displays all generated reports in one place. After generating a report in the workbench, it appears here categorized and filterable.
+
+### Layout
+
+Full-width horizontal card feed with a fixed sidebar navigation.
+
+### Tabs
+
+Pill-style tab bar at the top for quick categorization:
+
+| Tab | Description |
+|-----|-------------|
+| Focus | Reports marked as important/pinned |
+| All | All reports (default view) |
+| Unread | New reports not yet viewed |
+| Archived | Reports moved to archive |
+
+### Filters
+
+- **Report Type** dropdown: People & Culture, Meetings, Wellness, Compliance, All Types
+- **Time Frame** dropdown: This Week, This Month, All Time
+
+### Report Count & Pagination
+
+- Count display (e.g. "1-6 of 10 reports") next to filters
+- Page size: 6 reports per page
+- Page number buttons + prev/next arrows
+- Page resets to 1 when switching tabs or filters
+
+### Report Card (Horizontal)
+
+Full-width horizontal card layout:
+
+```
+┌─┬─────────────────────────────────────────────────────┬──────────────────┬──┐
+│ │ [Category Badge]  Report Title            ● (unread)│ Agent Name       │ >│
+│C│                    Preview text truncated...         │ 2h ago           │  │
+│ │                                                     │                  │  │
+└─┴─────────────────────────────────────────────────────┴──────────────────┴──┘
+  ^                                                          ^               ^
+  Color-coded left border by category                        Meta column     Chevron
+```
+
+Each card shows:
+- Color-coded left border by category (blue=People & Culture, amber=Meetings, emerald=Wellness, purple=Compliance)
+- Category badge (colored pill)
+- Report title (truncated)
+- Green dot indicator for unread reports
+- Preview text (truncated)
+- Agent name + relative date (right-aligned)
+- Chevron arrow on hover
+
+### Empty States
+
+Each tab has a contextual empty message:
+- Focus: "Pin important reports to keep them in focus"
+- Unread: "You're all caught up"
+- Archived: "No archived reports yet"
+- All: "Generate your first report from an agent"
+
+---
+
+## Page 4: Report Detail
+
+Read-only view of a single report, accessed by clicking a report card in Pulse.
+
+### Layout
+
+Centered content area (max-width 3xl) with back navigation.
+
+### Header
+
+- Back button → returns to `/pulse`
+- Category badge (colored pill)
+- "New" indicator for unread reports
+- Report title (full, large)
+- Agent name + full date (e.g. "May 11, 2026, 2:30 PM")
+
+### Content
+
+Report content rendered from markdown:
+- `#` headings → bold section titles
+- `##` headings → subsection titles with green left border (matching ReportView pattern)
+- `###` headings → smaller section headers
+- Bullet lists → styled with bullet points
+- Numbered lists → preserved numbering
+- Plain text → `whitespace-pre-wrap`
+
+### Not Found State
+
+If report ID doesn't match mock data: "Report not found" message with link back to Pulse.
+
+---
+
+## Sidebar Navigation
+
+Fixed left sidebar (`w-64`, `#0a3542` background) present on all pages. Collapsible to `w-16` (icon-only mode) via chevron button.
+
+### Nav Items
+
+| Item | Route | Type |
+|------|-------|------|
+| Dashboard | `/coming-soon?title=Dashboard` | Link |
+| My Team | `/coming-soon?title=My Team` | Link |
+| My Meetings | `/coming-soon?title=My Meetings` | Link |
+| My Manda | `/coming-soon?title=My Manda` | Link |
+| **Agents** (group) | — | Collapsible |
+| ├ Browse Agents | `/` | Link |
+| └ Pulse | `/pulse` | Link |
+| **Insights** (group) | — | Collapsible |
+| ├ Time in Meetings | `/coming-soon?title=...` | Link |
+| ├ Meeting Effectiveness | `/coming-soon?title=...` | Link |
+| ├ People Managers | `/coming-soon?title=...` | Link |
+| ├ External Meetings | `/coming-soon?title=...` | Link |
+| ├ Employee Wellness | `/coming-soon?title=...` | Link |
+| └ Meeting Data | `/coming-soon?title=...` | Link |
+| Organisational Compliance | `/coming-soon?title=...` | Link |
+| Feedback | `/coming-soon?title=...` | Link |
+| Learning | `/coming-soon?title=...` | Link |
+| Settings | `/coming-soon?title=...` | Link |
+| Support (footer) | `/coming-soon?title=...` | Link |
+
+### Styling
+
+- Active item: `bg-[#195160]` text `#00cca2`
+- Inactive item: text `#cecfd2`, hover `bg-white/5`
+- Pill-shaped items (`rounded-full`)
+- Collapsible groups expand/collapse with chevron icon
+- All items use consistent `py-2` padding
+
+---
+
+See [mockdata/](../mockdata/) for sample data and report templates.
+
+## API Endpoints (Mock)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/agents/` | List all agents |
+| GET | `/api/v1/agents/{id}` | Get agent detail |
+| POST | `/api/v1/sessions/` | Create new session |
+| GET | `/api/v1/sessions/` | List sessions for agent |
+| GET | `/api/v1/sessions/{id}` | Get session with messages |
+| POST | `/api/v1/sessions/{id}/chat/stream` | Send message, SSE streaming response |
+| POST | `/api/v1/sessions/{id}/pin` | Toggle exclude/include an item from report |
+| GET | `/api/v1/sessions/{id}/report` | Get report MD template |
+| PUT | `/api/v1/sessions/{id}/report` | Update report MD |
+| POST | `/api/v1/sessions/{id}/schedule` | Save schedule config |
+| POST | `/api/v1/sessions/{id}/apply-chat` | Apply chat suggestion to report |
+| GET | `/api/v1/pulse/reports` | List all reports for Pulse feed (with filters) |
+| GET | `/api/v1/pulse/reports/{id}` | Get single report detail |
+| PUT | `/api/v1/pulse/reports/{id}/status` | Update report status (focus/unread/archived) |
+
+---
+
+## Tech Stack
+
+- **Frontend**: Next.js 15, React 19, Tailwind CSS 4
+- **Backend**: FastAPI, SSE for streaming
+- **State**: React state + context
+- **Data**: In-memory mock data, seeded on startup
+
+---
+
+## Out of Scope
+
+- Real AI/LLM integration
+- Real OAuth flows for integrations
+- User authentication
+- Persistent database
+- File uploads / attachments
+- Real Google Docs export
+- Actual scheduled report execution

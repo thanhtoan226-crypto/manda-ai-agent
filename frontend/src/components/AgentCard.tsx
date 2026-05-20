@@ -1,6 +1,6 @@
 "use client";
 
-import { Star, Play, CalendarClock, UserCheck, BarChart3, HeartPulse, FileText, Bot, Target, Calculator, UserPlus, GitBranch, Shield, ShieldCheck } from "lucide-react";
+import { Star, Play, CalendarClock, UserCheck, BarChart3, HeartPulse, FileText, Bot, Target, Calculator, UserPlus, GitBranch, Shield, ShieldCheck, TrendingUp, HeartHandshake, Home, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Agent } from "@/types/agent";
 
@@ -15,6 +15,10 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: 
   "git-branch": GitBranch,
   "shield": Shield,
   "shield-check": ShieldCheck,
+  "trending-up": TrendingUp,
+  "heart-handshake": HeartHandshake,
+  "home": Home,
+  "dollar-sign": DollarSign,
 };
 
 const INTEGRATION_ICONS: Record<string, string> = {

@@ -16,6 +16,9 @@ import {
   ChevronRight,
   ChevronLeft,
   Clock,
+  Globe,
+  Heart,
+  Database,
   Shield,
   MessageCircle,
   BookOpen,
@@ -29,9 +32,9 @@ const INSIGHT_ITEMS = [
   { label: "Time in Meetings", icon: Clock, slug: "time-in-meetings" },
   { label: "Meeting Effectiveness", icon: BarChart3, slug: "meeting-effectiveness" },
   { label: "People Managers", icon: Users, slug: "people-managers" },
-  { label: "External Meetings", icon: Activity, slug: "external-meetings" },
-  { label: "Employee Wellness", icon: MessageCircle, slug: "employee-wellness" },
-  { label: "Meeting Data", icon: Shield, slug: "meeting-data" },
+  { label: "External Meetings", icon: Globe, slug: "external-meetings" },
+  { label: "Employee Wellness", icon: Heart, slug: "employee-wellness" },
+  { label: "Meeting Data", icon: Database, slug: "meeting-data" },
 ];
 
 export default function Sidebar({
@@ -43,7 +46,7 @@ export default function Sidebar({
 }) {
   const pathname = usePathname();
   const [agentsOpen, setAgentsOpen] = useState(true);
-  const [insightsOpen, setInsightsOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(pathname.startsWith("/insights"));
 
   const isAgentsActive = pathname === "/" || pathname.startsWith("/workbench") || pathname.startsWith("/pulse");
 
@@ -146,14 +149,19 @@ export default function Sidebar({
             label="Insights"
             open={insightsOpen}
             onToggle={() => setInsightsOpen(!insightsOpen)}
-            active={insightsOpen}
+            active={pathname.startsWith("/insights")}
             collapsed={collapsed}
           >
             {INSIGHT_ITEMS.map((item) => (
               <Link
                 key={item.slug}
-                href={`/coming-soon?title=${encodeURIComponent(item.label)}`}
-                className="flex items-center gap-2 px-3 py-2 rounded-full text-sm font-semibold text-[#cecfd2] hover:text-white transition-colors"
+                href={`/insights/${item.slug}`}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-full text-sm font-semibold transition-colors",
+                  pathname === `/insights/${item.slug}`
+                    ? "text-[#00cca2] bg-[#195160]"
+                    : "text-[#cecfd2] hover:text-white hover:bg-white/5"
+                )}
               >
                 <item.icon size={14} />
                 {item.label}
