@@ -14,12 +14,161 @@ import {
   Search,
   Shield,
   HelpCircle,
+  Sparkles,
+  Send,
+  X,
 } from "lucide-react";
-import type { ContentModule } from "@/types/session";
+import type { ContentModule, ChatMessage } from "@/types/session";
+import { streamChat } from "@/lib/api";
+
+// --- Agent Configuration ---
+
+interface AgentMode {
+  id: string;
+  label: string;
+  description: string;
+}
+
+interface AgentConfig {
+  firstStep: string;
+  subjectLabel: string;
+  subjects: string[] | Record<string, string[]>;
+  modes: AgentMode[];
+  tableHeaders: { key: string; label: string }[];
+  badgeLabels: { cost: string; alignment: string };
+  verifySource: string;
+  stepLabels: { subject: string };
+}
+
+const AGENT_CONFIGS: Record<string, AgentConfig> = {
+  "agent-1on1": {
+    firstStep: "select-employee",
+    subjectLabel: "Select a direct report",
+    subjects: [
+      "Chris Petersen",
+      "Mart Thompson",
+      "Damien Nguyen",
+      "Jessie Martinez",
+      "Johnny Walsh",
+      "Jackson Lee",
+    ],
+    modes: [
+      { id: "coaching", label: "Coaching & Support", description: "Strengths-first, warm tone, for growth and wellbeing" },
+      { id: "performance", label: "Performance Review Prep", description: "Evidence-based, balanced, for formal reviews" },
+      { id: "workload", label: "Workload Concern", description: "Volume/trend data, caring but factual, for capacity signals" },
+      { id: "investigation", label: "Investigation", description: "Direct/factual, data-driven, for engagement concerns" },
+    ],
+    tableHeaders: [
+      { key: "meeting", label: "Meeting" },
+      { key: "hours", label: "Frequency" },
+      { key: "cost", label: "Cost" },
+      { key: "intent", label: "Attendees" },
+      { key: "alignment", label: "Priority" },
+    ],
+    badgeLabels: { cost: "Cost", alignment: "Priority" },
+    verifySource: "Source: Calendar integration (Outlook + Google Calendar)\n- Period: Last 30 days\n- Confidence: 94%\n- Sample size: 118 meetings analyzed\n- Methodology: Peer comparison against 69 Engineering Managers at REA Group",
+    stepLabels: { subject: "Subject" },
+  },
+  "agent-executive": {
+    firstStep: "select-scope",
+    subjectLabel: "Select target scope",
+    subjects: [
+      "Company-wide",
+      "Engineering",
+      "Product",
+      "Design",
+      "Marketing",
+      "Sales",
+      "Operations",
+    ],
+    modes: [
+      { id: "talent", label: "Talent Focus", description: "People-centric signals: engagement, burnout risk, 1-on-1 coverage" },
+      { id: "board-ready", label: "Board-Ready", description: "Executive summary with key metrics, trends, and cost impact" },
+      { id: "capacity", label: "Capacity Review", description: "Workload distribution, meeting overload, and resource utilisation" },
+      { id: "risk", label: "Risk Assessment", description: "Red flags: declining quality, attendance drops, compliance gaps" },
+    ],
+    tableHeaders: [
+      { key: "meeting", label: "Team" },
+      { key: "hours", label: "Hrs/Employee" },
+      { key: "cost", label: "Cost" },
+      { key: "intent", label: "Large Meeting %" },
+      { key: "alignment", label: "Health" },
+    ],
+    badgeLabels: { cost: "Cost", alignment: "Health" },
+    verifySource: "Source: Organization-wide calendar analytics\n- Period: Last month\n- Confidence: 91%\n- Sample size: 2,847 employees across 7 departments\n- Methodology: Department-level aggregation with per-capita normalization",
+    stepLabels: { subject: "Scope" },
+  },
+  "agent-recurring": {
+    firstStep: "skip-to-timeframe",
+    subjectLabel: "Your recurring meetings",
+    subjects: [],
+    modes: [
+      { id: "cost", label: "Cost Optimisation", description: "Focus on time and money waste, consolidation opportunities" },
+      { id: "quality", label: "Quality Review", description: "Focus on agenda usage, purpose clarity, and desired outcomes" },
+      { id: "attendance", label: "Attendance & Engagement", description: "Focus on declining rates, no-response patterns, and participation" },
+    ],
+    tableHeaders: [
+      { key: "meeting", label: "Meeting" },
+      { key: "hours", label: "Frequency" },
+      { key: "cost", label: "Cost" },
+      { key: "intent", label: "Avg Attendees" },
+      { key: "alignment", label: "Verdict" },
+    ],
+    badgeLabels: { cost: "Cost", alignment: "Verdict" },
+    verifySource: "Source: Recurring meeting audit from calendar data\n- Period: Last quarter\n- Confidence: 93%\n- Sample size: 14 recurring meetings analyzed\n- Methodology: Cost modeling with blended rate of $120/hr/attendee",
+    stepLabels: { subject: "Scope" },
+  },
+  "agent-team-health": {
+    firstStep: "select-department",
+    subjectLabel: "Select department and team",
+    subjects: {
+      Engineering: ["Platform", "Frontend", "Backend", "Data", "DevOps"],
+      Product: ["Search", "Marketplace", "Payments"],
+      Design: ["UX Research", "Product Design", "Brand"],
+      Marketing: ["Growth", "Content", "Analytics"],
+      Sales: ["Enterprise", "SMB", "Partnerships"],
+    },
+    modes: [
+      { id: "coaching", label: "Coaching & Support", description: "Team morale and wellbeing focus, strengths-first framing" },
+      { id: "performance", label: "Performance Review", description: "Team metrics vs benchmarks, evaluative comparison" },
+      { id: "workload", label: "Workload Concern", description: "Capacity and burnout signals across the team" },
+      { id: "investigation", label: "Investigation", description: "Engagement and participation patterns, direct factual framing" },
+    ],
+    tableHeaders: [
+      { key: "meeting", label: "Member" },
+      { key: "hours", label: "Meeting Hours" },
+      { key: "cost", label: "Load" },
+      { key: "intent", label: "After-Hours" },
+      { key: "alignment", label: "Status" },
+    ],
+    badgeLabels: { cost: "Load", alignment: "Status" },
+    verifySource: "Source: Team meeting health analytics\n- Period: Last month\n- Confidence: 90%\n- Sample size: 12 team members, 286 meetings\n- Methodology: Team-level comparison against org-wide benchmarks",
+    stepLabels: { subject: "Team" },
+  },
+};
+
+const DEFAULT_CONFIG = AGENT_CONFIGS["agent-1on1"];
+
+const TIME_FRAMES = ["Last week", "Last month", "Last quarter", "Last 6 months"];
+
+type ConversationStep =
+  | "select-employee"
+  | "select-scope"
+  | "select-department"
+  | "select-team"
+  | "skip-to-timeframe"
+  | "select-timeframe"
+  | "select-mode"
+  | "confirm"
+  | "generating"
+  | "content";
+
+// --- Main Component ---
 
 interface MainCanvasProps {
   sessionTitle: string;
   sessionId: string;
+  agentId: string;
   agentName: string;
   mode: string | null;
   modules: ContentModule[];
@@ -31,30 +180,16 @@ interface MainCanvasProps {
   onUpdateReport: (markdown: string) => void;
   onOpenSchedule: () => void;
   onAskQuestion: (chipId: string, chipLabel: string, question: string) => void;
+  chatMessages: ChatMessage[];
+  onChatMessagesUpdate: (messages: ChatMessage[]) => void;
+  onApplyToReport: (content: string) => void;
+  showToast: (message: string) => void;
 }
-
-const MODES = [
-  { id: "coaching", label: "Coaching & Support", description: "Strengths-first, warm tone, for growth and wellbeing" },
-  { id: "performance", label: "Performance Review Prep", description: "Evidence-based, balanced, for formal reviews" },
-  { id: "workload", label: "Workload Concern", description: "Volume/trend data, caring but factual, for capacity signals" },
-  { id: "investigation", label: "Investigation", description: "Direct/factual, data-driven, for engagement concerns" },
-];
-
-const DIRECT_REPORTS = [
-  "Mart Thompson",
-  "Damien Nguyen",
-  "Jessie Martinez",
-  "Johnny Walsh",
-  "Jackson Lee",
-];
-
-const TIME_FRAMES = ["Last week", "Last month", "Last quarter", "Last 6 months"];
-
-type ConversationStep = "select-employee" | "select-timeframe" | "select-mode" | "confirm" | "generating" | "content";
 
 export default function MainCanvas({
   sessionTitle,
   sessionId,
+  agentId,
   agentName,
   mode,
   modules,
@@ -66,11 +201,24 @@ export default function MainCanvas({
   onUpdateReport,
   onOpenSchedule,
   onAskQuestion,
+  chatMessages,
+  onChatMessagesUpdate,
+  onApplyToReport,
+  showToast,
 }: MainCanvasProps) {
   const [viewMode, setViewMode] = useState<"conversation" | "report">("conversation");
   const [drillDownContent, setDrillDownContent] = useState<Record<string, string>>({});
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
   const [editingReport, setEditingReport] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+
+  const config = AGENT_CONFIGS[agentId] || DEFAULT_CONFIG;
+
+  // Reset drill-down state when switching sessions
+  useEffect(() => {
+    setDrillDownContent({});
+    setLoadingItemId(null);
+  }, [sessionId]);
 
   const handleDrillDown = useCallback(
     async (itemId: string, chipId: string) => {
@@ -93,7 +241,7 @@ export default function MainCanvas({
   );
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-slate-50">
+    <div className="flex-1 flex flex-col h-full bg-slate-50 relative">
       {/* Header */}
       <div className="px-6 py-3 border-b border-slate-200 bg-white flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -112,6 +260,18 @@ export default function MainCanvas({
           >
             <CalendarClock size={15} />
             Schedule
+          </button>
+          <button
+            onClick={() => setChatOpen(!chatOpen)}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors",
+              chatOpen
+                ? "bg-accent/10 text-accent border border-accent/20"
+                : "text-slate-600 hover:bg-slate-100"
+            )}
+          >
+            <Sparkles size={15} />
+            Chat
           </button>
           <button
             onClick={() => setViewMode(viewMode === "conversation" ? "report" : "conversation")}
@@ -137,6 +297,7 @@ export default function MainCanvas({
         {viewMode === "conversation" ? (
           <ConversationView
             key={sessionId}
+            config={config}
             mode={mode}
             modules={modules}
             excludedItemIds={excludedItemIds}
@@ -153,17 +314,34 @@ export default function MainCanvas({
             markdown={reportMarkdown}
             modules={modules}
             excludedItemIds={excludedItemIds}
+            config={config}
             editing={editingReport}
             onToggleEdit={() => setEditingReport(!editingReport)}
             onUpdate={onUpdateReport}
+            showToast={showToast}
           />
         )}
       </div>
+
+      {/* Chat Drawer */}
+      {chatOpen && (
+        <ChatDrawer
+          sessionId={sessionId}
+          mode={mode}
+          messages={chatMessages}
+          onMessagesUpdate={onChatMessagesUpdate}
+          onApplyToReport={onApplyToReport}
+          onClose={() => setChatOpen(false)}
+        />
+      )}
     </div>
   );
 }
 
+// --- Conversation View ---
+
 function ConversationView({
+  config,
   mode,
   modules,
   excludedItemIds,
@@ -175,6 +353,7 @@ function ConversationView({
   onActionContent,
   onAskQuestion,
 }: {
+  config: AgentConfig;
   mode: string | null;
   modules: ContentModule[];
   excludedItemIds: Set<string>;
@@ -188,9 +367,10 @@ function ConversationView({
 }) {
   const hasContent = mode !== null && modules.length > 0;
   const [step, setStep] = useState<ConversationStep>(
-    hasContent ? "content" : "select-employee"
+    hasContent ? "content" : (config.firstStep as ConversationStep)
   );
-  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<string | null>(null);
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
   const [customTimeFrame, setCustomTimeFrame] = useState("");
@@ -214,14 +394,29 @@ function ConversationView({
     }
   };
 
-  const steps = [
-    { key: "select-employee", label: "Subject" },
-    { key: "select-timeframe", label: "Time Frame" },
-    { key: "select-mode", label: "Mode" },
-    { key: "confirm", label: "Confirm" },
-  ] as const;
+  // Build step list dynamically based on agent config
+  const stepList = (() => {
+    const steps: { key: ConversationStep; label: string }[] = [];
+    if (config.firstStep === "select-employee") {
+      steps.push({ key: "select-employee", label: config.stepLabels.subject });
+    } else if (config.firstStep === "select-scope") {
+      steps.push({ key: "select-scope", label: config.stepLabels.subject });
+    } else if (config.firstStep === "select-department") {
+      steps.push({ key: "select-department", label: "Department" });
+      steps.push({ key: "select-team", label: "Team" });
+    }
+    // skip-to-timeframe agents have no subject step
+    steps.push({ key: "select-timeframe", label: "Time Frame" });
+    steps.push({ key: "select-mode", label: "Mode" });
+    steps.push({ key: "confirm", label: "Confirm" });
+    return steps;
+  })();
 
-  const stepOrder: ConversationStep[] = ["select-employee", "select-timeframe", "select-mode", "confirm", "generating", "content"];
+  const stepOrder: ConversationStep[] = [
+    ...stepList.map((s) => s.key),
+    "generating",
+    "content",
+  ];
   const currentStepIndex = stepOrder.indexOf(step);
 
   // Content view
@@ -229,19 +424,24 @@ function ConversationView({
     return (
       <div className="p-6 space-y-6">
         {modules.map((module) => {
-          const dataContent = module.content["chip-data"];
+          const dataChips = module.chips.filter(
+            (chip) => chip.id.endsWith("-data") || chip.id === "chip-data"
+          );
           const insightChips = module.chips.filter(
-            (chip) => chip.id !== "chip-data" && !chip.disabled
+            (chip) => !chip.id.endsWith("-data") && chip.id !== "chip-data"
           );
 
           return (
             <div key={module.id} className="bg-white rounded-xl border border-slate-200 p-5">
               <h3 className="font-semibold text-navy mb-3">{module.title}</h3>
 
-              {/* Data Interpreter content */}
-              {dataContent ? <ChipContent data={dataContent} /> : null}
+              {dataChips.map((chip) => {
+                const dataContent = module.content[chip.id];
+                return dataContent ? (
+                  <ChipContent key={chip.id} data={dataContent} config={config} />
+                ) : null;
+              })}
 
-              {/* Insight sections */}
               {insightChips.map((chip) => {
                 const chipContent = module.content[chip.id];
                 if (!chipContent || typeof chipContent !== "object") return null;
@@ -254,7 +454,6 @@ function ConversationView({
                   <div key={chip.id} className="mt-6">
                     <h4 className="text-sm font-semibold text-slate-500 mb-3">{chip.label}</h4>
 
-                    {/* Items type */}
                     {items && (
                       <div className="space-y-3">
                         {items.map((item, index) => {
@@ -273,13 +472,13 @@ function ConversationView({
                               onAskQuestion={onAskQuestion}
                               loadingItemId={loadingItemId}
                               drillDownContent={drillDownContent}
+                              config={config}
                             />
                           );
                         })}
                       </div>
                     )}
 
-                    {/* Table type - each row is its own block */}
                     {table && (
                       <div className="space-y-3">
                         {table.map((row, index) => {
@@ -299,6 +498,7 @@ function ConversationView({
                               loadingItemId={loadingItemId}
                               drillDownContent={drillDownContent}
                               rowData={row}
+                              config={config}
                             />
                           );
                         })}
@@ -326,12 +526,23 @@ function ConversationView({
     );
   }
 
+  // Step navigation
+  const goBack = (targetStep: ConversationStep) => setStep(targetStep);
+
+  // Summary text for confirm step
+  const subjectDisplay = config.firstStep === "select-department"
+    ? `${selectedDepartment} → ${selectedSubject}`
+    : selectedSubject;
+  const scopeLabel = config.firstStep === "skip-to-timeframe"
+    ? "Your recurring meetings"
+    : subjectDisplay;
+
   return (
     <div className="p-8 max-w-2xl mx-auto">
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-8">
-        {steps.map((s, i) => {
-          const stepIdx = stepOrder.indexOf(s.key as ConversationStep);
+        {stepList.map((s, i) => {
+          const stepIdx = stepOrder.indexOf(s.key);
           const isActive = currentStepIndex === stepIdx;
           const isDone = currentStepIndex > stepIdx;
           return (
@@ -355,27 +566,27 @@ function ConversationView({
         })}
       </div>
 
-      {/* Step 1: Select Employee */}
+      {/* Step: Select Employee (1-on-1) */}
       {step === "select-employee" && (
         <div>
           <div className="mb-6">
             <p className="text-slate-500 text-sm mb-1">AI Agent</p>
-            <h3 className="text-lg font-semibold text-[#0a3542]">Select a direct report</h3>
+            <h3 className="text-lg font-semibold text-[#0a3542]">{config.subjectLabel}</h3>
             <p className="text-sm text-slate-500 mt-1">
-              You have {DIRECT_REPORTS.length} direct reports. Select one to start the report.
+              You have {Array.isArray(config.subjects) ? config.subjects.length : 0} direct reports. Select one to start the report.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {DIRECT_REPORTS.map((name) => (
+            {(Array.isArray(config.subjects) ? config.subjects : []).map((name) => (
               <button
                 key={name}
                 onClick={() => {
-                  setSelectedEmployee(name);
+                  setSelectedSubject(name);
                   setStep("select-timeframe");
                 }}
                 className={cn(
                   "text-left p-4 rounded-xl border transition-all",
-                  selectedEmployee === name
+                  selectedSubject === name
                     ? "border-accent bg-accent/5"
                     : "border-slate-200 hover:border-accent/30 hover:shadow-sm"
                 )}
@@ -392,17 +603,114 @@ function ConversationView({
         </div>
       )}
 
-      {/* Step 2: Select Time Frame */}
-      {step === "select-timeframe" && (
+      {/* Step: Select Scope (Executive Digest) */}
+      {step === "select-scope" && (
         <div>
           <div className="mb-6">
-            <button onClick={() => setStep("select-employee")} className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#0a3542] mb-4">
+            <p className="text-slate-500 text-sm mb-1">AI Agent</p>
+            <h3 className="text-lg font-semibold text-[#0a3542]">{config.subjectLabel}</h3>
+            <p className="text-sm text-slate-500 mt-1">Choose company-wide or a specific department.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {(Array.isArray(config.subjects) ? config.subjects : []).map((scope) => (
+              <button
+                key={scope}
+                onClick={() => {
+                  setSelectedSubject(scope);
+                  setStep("select-timeframe");
+                }}
+                className={cn(
+                  "text-left p-4 rounded-xl border transition-all",
+                  selectedSubject === scope
+                    ? "border-accent bg-accent/5"
+                    : "border-slate-200 hover:border-accent/30 hover:shadow-sm"
+                )}
+              >
+                <span className="text-sm font-medium text-[#0a3542]">{scope}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step: Select Department (Team Health Check) */}
+      {step === "select-department" && (
+        <div>
+          <div className="mb-6">
+            <p className="text-slate-500 text-sm mb-1">AI Agent</p>
+            <h3 className="text-lg font-semibold text-[#0a3542]">Select a department</h3>
+            <p className="text-sm text-slate-500 mt-1">Choose the department to narrow down team selection.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {Object.keys(config.subjects as Record<string, string[]>).map((dept) => (
+              <button
+                key={dept}
+                onClick={() => {
+                  setSelectedDepartment(dept);
+                  setStep("select-team");
+                }}
+                className={cn(
+                  "text-left p-4 rounded-xl border transition-all",
+                  selectedDepartment === dept
+                    ? "border-accent bg-accent/5"
+                    : "border-slate-200 hover:border-accent/30 hover:shadow-sm"
+                )}
+              >
+                <span className="text-sm font-medium text-[#0a3542]">{dept}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step: Select Team (Team Health Check) */}
+      {step === "select-team" && selectedDepartment && (
+        <div>
+          <div className="mb-6">
+            <button onClick={() => goBack("select-department")} className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#0a3542] mb-4">
               <ChevronLeft size={14} />
               Back
             </button>
+            <h3 className="text-lg font-semibold text-[#0a3542]">Select a team in {selectedDepartment}</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {((config.subjects as Record<string, string[]>)[selectedDepartment] || []).map((team) => (
+              <button
+                key={team}
+                onClick={() => {
+                  setSelectedSubject(team);
+                  setStep("select-timeframe");
+                }}
+                className={cn(
+                  "text-left p-4 rounded-xl border transition-all",
+                  selectedSubject === team
+                    ? "border-accent bg-accent/5"
+                    : "border-slate-200 hover:border-accent/30 hover:shadow-sm"
+                )}
+              >
+                <span className="text-sm font-medium text-[#0a3542]">{team}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step: Select Time Frame */}
+      {step === "select-timeframe" && (
+        <div>
+          <div className="mb-6">
+            {config.firstStep !== "skip-to-timeframe" && (
+              <button
+                onClick={() => goBack(stepOrder[0] as ConversationStep)}
+                className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#0a3542] mb-4"
+              >
+                <ChevronLeft size={14} />
+                Back
+              </button>
+            )}
             <h3 className="text-lg font-semibold text-[#0a3542]">What time frame would you like to analyze?</h3>
             <p className="text-sm text-slate-500 mt-1">
-              For: {selectedEmployee}
+              For: {scopeLabel || "Your meetings"}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 mb-4">
@@ -451,21 +759,21 @@ function ConversationView({
         </div>
       )}
 
-      {/* Step 3: Select Mode */}
+      {/* Step: Select Mode */}
       {step === "select-mode" && (
         <div>
           <div className="mb-6">
-            <button onClick={() => setStep("select-timeframe")} className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#0a3542] mb-4">
+            <button onClick={() => goBack("select-timeframe")} className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#0a3542] mb-4">
               <ChevronLeft size={14} />
               Back
             </button>
             <h3 className="text-lg font-semibold text-[#0a3542]">Select a conversation mode</h3>
             <p className="text-sm text-slate-500 mt-1">
-              {selectedEmployee} — {selectedTimeFrame}
+              {scopeLabel} — {selectedTimeFrame}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            {MODES.map((m) => (
+            {config.modes.map((m) => (
               <button
                 key={m.id}
                 onClick={() => {
@@ -487,11 +795,11 @@ function ConversationView({
         </div>
       )}
 
-      {/* Step 4: Confirm */}
+      {/* Step: Confirm */}
       {step === "confirm" && (
         <div>
           <div className="mb-6">
-            <button onClick={() => setStep("select-mode")} className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#0a3542] mb-4">
+            <button onClick={() => goBack("select-mode")} className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#0a3542] mb-4">
               <ChevronLeft size={14} />
               Back
             </button>
@@ -499,11 +807,15 @@ function ConversationView({
             <p className="text-sm text-slate-500 mt-1">Review and confirm to generate the report.</p>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">Subject</span>
-              <span className="text-sm font-medium text-[#0a3542]">{selectedEmployee}</span>
-            </div>
-            <div className="border-t border-slate-100" />
+            {config.firstStep !== "skip-to-timeframe" && (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500">{config.stepLabels.subject}</span>
+                  <span className="text-sm font-medium text-[#0a3542]">{subjectDisplay}</span>
+                </div>
+                <div className="border-t border-slate-100" />
+              </>
+            )}
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-500">Time Frame</span>
               <span className="text-sm font-medium text-[#0a3542]">{selectedTimeFrame}</span>
@@ -512,7 +824,7 @@ function ConversationView({
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-500">Mode</span>
               <span className="text-sm font-medium text-[#0a3542]">
-                {MODES.find((m) => m.id === selectedMode)?.label}
+                {config.modes.find((m) => m.id === selectedMode)?.label}
               </span>
             </div>
           </div>
@@ -529,6 +841,8 @@ function ConversationView({
   );
 }
 
+// --- Item Block ---
+
 function ItemBlock({
   itemId,
   text,
@@ -542,6 +856,7 @@ function ItemBlock({
   loadingItemId,
   drillDownContent,
   rowData,
+  config,
 }: {
   itemId: string;
   text: string;
@@ -555,6 +870,7 @@ function ItemBlock({
   loadingItemId: string | null;
   drillDownContent: Record<string, string>;
   rowData?: Record<string, string>;
+  config: AgentConfig;
 }) {
   const isLoading = loadingItemId === itemId;
   const [questionPopupOpen, setQuestionPopupOpen] = useState(false);
@@ -572,6 +888,16 @@ function ItemBlock({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [questionPopupOpen]);
+
+  const badgeClass = (value: string | undefined) => {
+    if (!value) return "bg-slate-100 text-slate-700";
+    const lower = value.toLowerCase();
+    if (["high", "keep", "overloaded"].includes(lower)) return "bg-red-100 text-red-700";
+    if (["medium", "merge", "above avg"].includes(lower)) return "bg-yellow-100 text-yellow-700";
+    if (["low", "eliminate", "under-utilised"].includes(lower)) return "bg-green-100 text-green-700";
+    if (["optimal"].includes(lower)) return "bg-emerald-100 text-emerald-700";
+    return "bg-slate-100 text-slate-700";
+  };
 
   return (
     <div
@@ -591,25 +917,19 @@ function ItemBlock({
                 {rowData.meeting}
               </p>
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <span className="text-xs text-slate-500">{rowData.hours}</span>
-                <span className="text-xs text-slate-300">|</span>
-                <span className={cn(
-                  "px-1.5 py-0.5 rounded text-xs",
-                  rowData.cost === "High" ? "bg-red-100 text-red-700" :
-                  rowData.cost === "Medium" ? "bg-yellow-100 text-yellow-700" :
-                  "bg-green-100 text-green-700"
-                )}>
-                  Stage: {rowData.cost}
-                </span>
-                <span className="text-xs text-slate-500">Days: {rowData.intent}</span>
-                <span className={cn(
-                  "px-1.5 py-0.5 rounded text-xs",
-                  rowData.alignment === "High" ? "bg-green-100 text-green-700" :
-                  rowData.alignment === "Medium" ? "bg-yellow-100 text-yellow-700" :
-                  "bg-red-100 text-red-700"
-                )}>
-                  Probability: {rowData.alignment}
-                </span>
+                {rowData.hours && <span className="text-xs text-slate-500">{rowData.hours}</span>}
+                {rowData.hours && rowData.cost && <span className="text-xs text-slate-300">|</span>}
+                {rowData.cost && (
+                  <span className={cn("px-1.5 py-0.5 rounded text-xs", badgeClass(rowData.cost))}>
+                    {config.badgeLabels.cost}: {rowData.cost}
+                  </span>
+                )}
+                {rowData.intent && <span className="text-xs text-slate-500">{rowData.intent}</span>}
+                {rowData.alignment && (
+                  <span className={cn("px-1.5 py-0.5 rounded text-xs", badgeClass(rowData.alignment))}>
+                    {config.badgeLabels.alignment}: {rowData.alignment}
+                  </span>
+                )}
               </div>
             </div>
           ) : (
@@ -651,12 +971,7 @@ function ItemBlock({
           Drill down
         </button>
         <button
-          onClick={() =>
-            onActionContent(
-              itemId,
-              "Data backed for this insight:\n\n- Source: MLS + CRM transaction database\n- Period: Last 30 days\n- Confidence: 92%\n- Sample size: 347 data points\n- Methodology: Peer comparison against brokerage median"
-            )
-          }
+          onClick={() => onActionContent(itemId, config.verifySource)}
           className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 rounded-md transition-colors"
         >
           <Shield size={12} className="text-slate-400" />
@@ -721,12 +1036,15 @@ function ItemBlock({
   );
 }
 
-function ChipContent({ data }: { data: unknown }) {
+// --- Chip Content ---
+
+function ChipContent({ data, config }: { data: unknown; config: AgentConfig }) {
   if (!data || typeof data !== "object") return <p className="text-sm text-slate-600">{String(data)}</p>;
 
   const d = data as Record<string, unknown>;
 
   if (d.metrics && Array.isArray(d.metrics)) {
+    const hasPosition = (d.metrics as Array<Record<string, string>>).some((m) => m.position);
     return (
       <div>
         {d.text ? (
@@ -740,7 +1058,10 @@ function ChipContent({ data }: { data: unknown }) {
               <tr className="border-b border-slate-200">
                 <th className="text-left py-2 pr-4 text-slate-500 font-medium">Metric</th>
                 <th className="text-right py-2 px-4 text-slate-500 font-medium">Value</th>
-                <th className="text-right py-2 pl-4 text-slate-500 font-medium">Peer Median</th>
+                <th className="text-right py-2 px-4 text-slate-500 font-medium">Peer Median</th>
+                {hasPosition && (
+                  <th className="text-left py-2 pl-4 text-slate-500 font-medium">Position</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -748,7 +1069,10 @@ function ChipContent({ data }: { data: unknown }) {
                 <tr key={i} className="border-b border-slate-100">
                   <td className="py-2 pr-4 text-navy">{m.label}</td>
                   <td className="py-2 px-4 text-right font-medium text-navy">{m.value}</td>
-                  <td className="py-2 pl-4 text-right text-slate-400">{m.median}</td>
+                  <td className="py-2 px-4 text-right text-slate-400">{m.median}</td>
+                  {hasPosition && (
+                    <td className="py-2 pl-4 text-sm text-slate-500">{m.position || "—"}</td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -771,44 +1095,40 @@ function ChipContent({ data }: { data: unknown }) {
   }
 
   if (d.table && Array.isArray(d.table)) {
+    const customHeaders = d.headers as Array<{ key: string; label: string }> | undefined;
+    const headers = customHeaders || config.tableHeaders;
     return (
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200">
-              <th className="text-left py-2 pr-3 text-slate-500 font-medium">Property</th>
-              <th className="text-center py-2 px-3 text-slate-500 font-medium">Price</th>
-              <th className="text-center py-2 px-3 text-slate-500 font-medium">Stage</th>
-              <th className="text-center py-2 px-3 text-slate-500 font-medium">Days in Stage</th>
-              <th className="text-center py-2 pl-3 text-slate-500 font-medium">Probability</th>
+              {headers.map((h, i) => (
+                <th key={h.key} className={cn("py-2 px-3 text-slate-500 font-medium", i === 0 ? "text-left" : "text-right")}>
+                  {h.label}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {(d.table as Array<Record<string, string>>).map((row, i) => (
               <tr key={i} className="border-b border-slate-100">
-                <td className="py-2 pr-3 text-navy font-medium">{row.meeting}</td>
-                <td className="py-2 px-3 text-center">{row.hours}</td>
-                <td className="py-2 px-3 text-center">
-                  <span className={cn(
-                    "px-2 py-0.5 rounded-full text-xs",
-                    row.cost === "High" ? "bg-red-100 text-red-700" :
-                    row.cost === "Medium" ? "bg-yellow-100 text-yellow-700" :
-                    "bg-green-100 text-green-700"
-                  )}>
-                    {row.cost}
-                  </span>
-                </td>
-                <td className="py-2 px-3 text-center text-slate-600">{row.intent}</td>
-                <td className="py-2 pl-3 text-center">
-                  <span className={cn(
-                    "px-2 py-0.5 rounded-full text-xs",
-                    row.alignment === "High" ? "bg-green-100 text-green-700" :
-                    row.alignment === "Medium" ? "bg-yellow-100 text-yellow-700" :
-                    "bg-red-100 text-red-700"
-                  )}>
-                    {row.alignment}
-                  </span>
-                </td>
+                {headers.map((h, hi) => (
+                  <td key={h.key} className={cn("py-2 px-3", hi === 0 ? "text-left" : "text-right")}>
+                    {hi === 0 ? (
+                      <span className="font-medium text-navy">{row[h.key] ?? "—"}</span>
+                    ) : !customHeaders && (h.key === "cost" || h.key === "alignment") ? (
+                      row[h.key] ? (
+                        <span className={cn("px-2 py-0.5 rounded-full text-xs", badgeClassForValue(row[h.key]))}>
+                          {row[h.key]}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )
+                    ) : (
+                      <span className="text-slate-600">{row[h.key] ?? "—"}</span>
+                    )}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
@@ -824,41 +1144,60 @@ function ChipContent({ data }: { data: unknown }) {
   return <p className="text-sm text-slate-400">No content available</p>;
 }
 
+function badgeClassForValue(value: string | undefined): string {
+  if (!value) return "bg-slate-100 text-slate-700";
+  const lower = value.toLowerCase();
+  if (["high", "keep", "overloaded"].includes(lower)) return "bg-red-100 text-red-700";
+  if (["medium", "merge", "above avg"].includes(lower)) return "bg-yellow-100 text-yellow-700";
+  if (["low", "eliminate", "under-utilised"].includes(lower)) return "bg-green-100 text-green-700";
+  if (["optimal"].includes(lower)) return "bg-emerald-100 text-emerald-700";
+  return "bg-slate-100 text-slate-700";
+}
+
+// --- Report View ---
+
 function ReportView({
   markdown,
   modules,
   excludedItemIds,
+  config,
   editing,
   onToggleEdit,
   onUpdate,
+  showToast,
 }: {
   markdown: string;
   modules: ContentModule[];
   excludedItemIds: Set<string>;
+  config: AgentConfig;
   editing: boolean;
   onToggleEdit: () => void;
   onUpdate: (markdown: string) => void;
+  showToast: (message: string) => void;
 }) {
-  const reportTitle = markdown.split("\n")[0]?.replace(/^#\s*/, "") || "Report";
+  const reportTitle = markdown.split("\n").find(l => l.startsWith("# "))?.replace(/^#\s*/, "") || "Report";
 
   const renderModuleReport = (module: ContentModule) => {
-    const dataContent = module.content["chip-data"];
+    const dataChips = module.chips.filter(
+      (chip) => chip.id.endsWith("-data") || chip.id === "chip-data"
+    );
     const insightChips = module.chips.filter(
-      (chip) => chip.id !== "chip-data" && !chip.disabled
+      (chip) => !chip.id.endsWith("-data") && chip.id !== "chip-data" 
     );
 
     return (
       <div key={module.id} className="mb-8">
         <h2 className="text-lg font-bold text-navy mb-4">{module.title}</h2>
 
-        {/* Data Interpreter content */}
-        {dataContent ? (
-          <div className="mb-4">
-            <ChipContent data={dataContent} />
-          </div>
-        ) : null}
+        {dataChips.map((chip) => {
+          const dataContent = module.content[chip.id];
+          return dataContent ? (
+            <div key={chip.id} className="mb-4">
+              <ChipContent data={dataContent} config={config} />
+            </div>
+          ) : null;
+        })}
 
-        {/* Insight sections */}
         {insightChips.map((chip) => {
           const chipContent = module.content[chip.id];
           if (!chipContent || typeof chipContent !== "object") return null;
@@ -866,6 +1205,8 @@ function ReportView({
           const d = chipContent as Record<string, unknown>;
           const items = Array.isArray(d.items) ? (d.items as string[]) : null;
           const table = Array.isArray(d.table) ? (d.table as Array<Record<string, string>>) : null;
+          const customHeaders = d.headers as Array<{ key: string; label: string }> | undefined;
+          const headers = customHeaders || config.tableHeaders;
 
           return (
             <div key={chip.id} className="mb-4">
@@ -888,11 +1229,11 @@ function ReportView({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-200">
-                        <th className="text-left py-2 pr-3 text-slate-500 font-medium">Meeting</th>
-                        <th className="text-center py-2 px-3 text-slate-500 font-medium">Hours</th>
-                        <th className="text-center py-2 px-3 text-slate-500 font-medium">Cost</th>
-                        <th className="text-center py-2 px-3 text-slate-500 font-medium">Intent</th>
-                        <th className="text-center py-2 pl-3 text-slate-500 font-medium">Alignment</th>
+                        {headers.map((h, i) => (
+                          <th key={h.key} className={cn("py-2 px-3 text-slate-500 font-medium", i === 0 ? "text-left" : "text-right")}>
+                            {h.label}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
@@ -900,29 +1241,23 @@ function ReportView({
                         .filter((_: Record<string, string>, index: number) => !excludedItemIds.has(`${module.id}::${chip.id}::${index}`))
                         .map((row: Record<string, string>, i: number) => (
                           <tr key={i} className="border-b border-slate-100">
-                            <td className="py-2 pr-3 text-navy font-medium">{row.meeting}</td>
-                            <td className="py-2 px-3 text-center">{row.hours}</td>
-                            <td className="py-2 px-3 text-center">
-                              <span className={cn(
-                                "px-2 py-0.5 rounded-full text-xs",
-                                row.cost === "High" ? "bg-red-100 text-red-700" :
-                                row.cost === "Medium" ? "bg-yellow-100 text-yellow-700" :
-                                "bg-green-100 text-green-700"
-                              )}>
-                                {row.cost}
-                              </span>
-                            </td>
-                            <td className="py-2 px-3 text-center text-slate-600">{row.intent}</td>
-                            <td className="py-2 pl-3 text-center">
-                              <span className={cn(
-                                "px-2 py-0.5 rounded-full text-xs",
-                                row.alignment === "High" ? "bg-green-100 text-green-700" :
-                                row.alignment === "Medium" ? "bg-yellow-100 text-yellow-700" :
-                                "bg-red-100 text-red-700"
-                              )}>
-                                {row.alignment}
-                              </span>
-                            </td>
+                            {headers.map((h, hi) => (
+                              <td key={h.key} className={cn("py-2 px-3", hi === 0 ? "text-left" : "text-right")}>
+                                {hi === 0 ? (
+                                  <span className="font-medium text-navy">{row[h.key] ?? "—"}</span>
+                                ) : !customHeaders && (h.key === "cost" || h.key === "alignment") ? (
+                                  row[h.key] ? (
+                                    <span className={cn("px-2 py-0.5 rounded-full text-xs", badgeClassForValue(row[h.key]))}>
+                                      {row[h.key]}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400">—</span>
+                                  )
+                                ) : (
+                                  <span className="text-slate-600">{row[h.key] ?? "—"}</span>
+                                )}
+                              </td>
+                            ))}
                           </tr>
                         ))}
                     </tbody>
@@ -946,7 +1281,7 @@ function ReportView({
           {editing ? "Preview" : "Edit Template"}
         </button>
         <button
-          onClick={() => alert("Coming soon")}
+          onClick={() => showToast("Google Docs export coming soon")}
           className="px-3 py-1.5 text-sm bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
         >
           Convert to Google Docs
@@ -969,6 +1304,170 @@ function ReportView({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// --- Chat Drawer ---
+
+function ChatDrawer({
+  sessionId,
+  mode,
+  messages,
+  onMessagesUpdate,
+  onApplyToReport,
+  onClose,
+}: {
+  sessionId: string;
+  mode: string | null;
+  messages: ChatMessage[];
+  onMessagesUpdate: (messages: ChatMessage[]) => void;
+  onApplyToReport: (content: string) => void;
+  onClose: () => void;
+}) {
+  const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [appliedMessages, setAppliedMessages] = useState<Set<string>>(new Set());
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleSend = useCallback(async () => {
+    if (!input.trim() || isStreaming) return;
+
+    const userMsg: ChatMessage = {
+      id: `msg-local-${crypto.randomUUID().slice(0, 8)}`,
+      role: "user",
+      content: input.trim(),
+      timestamp: new Date().toISOString(),
+    };
+
+    const newMessages = [...messages, userMsg];
+    onMessagesUpdate(newMessages);
+    setInput("");
+    setIsStreaming(true);
+
+    const assistantId = `msg-local-${crypto.randomUUID().slice(0, 8)}`;
+    const assistantTemplate: ChatMessage = {
+      id: assistantId,
+      role: "assistant",
+      content: "",
+      timestamp: new Date().toISOString(),
+    };
+    onMessagesUpdate([...newMessages, assistantTemplate]);
+
+    let accumulatedContent = "";
+    try {
+      await streamChat(sessionId, userMsg.content, mode || undefined, (chunk) => {
+        if (chunk.type === "text" && chunk.content) {
+          accumulatedContent += chunk.content;
+          onMessagesUpdate([
+            ...newMessages,
+            { ...assistantTemplate, content: accumulatedContent },
+          ]);
+        }
+      });
+    } catch {
+      onMessagesUpdate([
+        ...newMessages,
+        { ...assistantTemplate, content: accumulatedContent + " [Error: Could not get response]" },
+      ]);
+    } finally {
+      setIsStreaming(false);
+    }
+  }, [input, isStreaming, messages, sessionId, mode, onMessagesUpdate]);
+
+  const handleApply = useCallback(
+    (message: ChatMessage) => {
+      onApplyToReport(message.content);
+      setAppliedMessages((prev) => new Set(prev).add(message.id || ""));
+    },
+    [onApplyToReport]
+  );
+
+  return (
+    <div className="absolute top-0 right-0 bottom-0 w-80 border-l border-slate-200 bg-white flex flex-col h-full shadow-lg z-10">
+      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles size={16} className="text-accent" />
+          <h3 className="font-medium text-sm text-navy">AI Chat</h3>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1 text-slate-400 hover:text-navy hover:bg-slate-50 rounded-lg transition-colors"
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-sm text-slate-400">Ask follow-up questions about the report.</p>
+          </div>
+        )}
+        {messages.map((msg) => (
+          <div
+            key={msg.id || msg.content.slice(0, 20)}
+            className={cn(
+              "rounded-lg px-3 py-2 text-sm",
+              msg.role === "user"
+                ? "bg-accent/10 text-navy ml-6"
+                : "bg-slate-50 text-slate-700 mr-2"
+            )}
+          >
+            <p className="whitespace-pre-wrap">{msg.content}</p>
+            {msg.role === "assistant" && msg.content && !isStreaming && (
+              <div className="mt-2 flex items-center gap-2">
+                {appliedMessages.has(msg.id || "") ? (
+                  <span className="flex items-center gap-1 text-xs text-green-600">
+                    <Check size={12} />
+                    Applied
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => handleApply(msg)}
+                    className="text-xs text-accent hover:text-accent/80 font-medium"
+                  >
+                    Apply to Report
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+        {isStreaming && (
+          <div className="flex items-center gap-2 px-3">
+            <div className="animate-pulse-glow h-2 w-2 bg-accent rounded-full" />
+            <span className="text-xs text-slate-400">AI is typing...</span>
+          </div>
+        )}
+      </div>
+
+      <div className="p-3 border-t border-slate-100">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+            placeholder="Ask a follow-up..."
+            disabled={isStreaming}
+            className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-accent disabled:opacity-50"
+          />
+          <button
+            onClick={handleSend}
+            disabled={isStreaming || !input.trim()}
+            className="p-2 bg-accent text-white rounded-lg hover:bg-accent/90 disabled:opacity-50 transition-colors"
+          >
+            <Send size={16} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

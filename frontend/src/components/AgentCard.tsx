@@ -1,6 +1,6 @@
 "use client";
 
-import { Star, Play, CalendarClock, UserCheck, BarChart3, HeartPulse, FileText, Bot, Target, Calculator, UserPlus, GitBranch, Shield, ShieldCheck, TrendingUp, HeartHandshake, Home, DollarSign } from "lucide-react";
+import { Star, Play, CalendarClock, UserCheck, BarChart3, HeartPulse, FileText, Bot, Target, Calculator, UserPlus, GitBranch, Shield, ShieldCheck, TrendingUp, HeartHandshake, Home, DollarSign, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Agent } from "@/types/agent";
 
@@ -8,6 +8,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: 
   "user-check": UserCheck,
   "bar-chart-3": BarChart3,
   "heart-pulse": HeartPulse,
+  "repeat": Repeat,
   "file-text": FileText,
   "target": Target,
   "calculator": Calculator,
@@ -22,8 +23,9 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: 
 };
 
 const INTEGRATION_ICONS: Record<string, string> = {
-  outlook: "M",
+  outlook: "O",
   gmail: "G",
+  "google-calendar": "GC",
   slack: "S",
   teams: "T",
 };

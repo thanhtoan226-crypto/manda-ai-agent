@@ -16,7 +16,6 @@ export interface ChipInfo {
   id: string;
   label: string;
   enabled: boolean;
-  disabled: boolean;
 }
 
 export interface ContentModule {

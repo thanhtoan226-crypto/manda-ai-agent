@@ -1,4 +1,4 @@
-# Recurring Meeting Audit Agent
+# AI Agent name: Recurring Meeting Audit
 
 Reviews all recurring meetings created by the user, providing cost, quality, and attendance insights with actionable recommendations.
 

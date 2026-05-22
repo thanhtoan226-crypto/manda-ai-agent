@@ -21,7 +21,7 @@ async def get_agent(agent_id: str):
     return result
 
 
-@router.put("/{agent_id}/favorite")
+@router.put("/{agent_id}/favorite", response_model=AgentDetailResponse)
 async def toggle_favorite(agent_id: str):
     service = AgentService()
     result = await service.toggle_favorite(agent_id)

@@ -19,9 +19,17 @@
 
 {{data_interpreter_categories}}
 
-### Meetings He Organizes
+### Top Recurring Time Commitments
+
+{{recurring_commitments_table}}
+
+### Meetings He Organises
 
 {{meetings_table}}
+
+### 1:1 Coverage
+
+{{1on1_coverage}}
 
 ### Discussion Starters
 
@@ -36,5 +44,7 @@
 | `{{strengths_items}}` | Positive patterns with evidence |
 | `{{patterns_items}}` | Concerning trends with data points |
 | `{{data_interpreter_categories}}` | Meeting category breakdown |
-| `{{meetings_table}}` | Meetings organized with cost/alignment |
+| `{{recurring_commitments_table}}` | Highest-cost recurring meetings with frequency, attendees, and monthly cost |
+| `{{meetings_table}}` | Meetings organized with quality scores, agenda usage, context clarity |
+| `{{1on1_coverage}}` | 1-on-1 stats: coverage rate, cancellation rate, reschedule rate, avg duration |
 | `{{starters_items}}` | Coaching prompts for 1-on-1 conversation |

@@ -1,9 +1,9 @@
-from typing import Optional, Union
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.schemas.session import SessionListResponse, SessionDetail, SessionCreateRequest
+from app.schemas.session import SessionListResponse, SessionDetail, SessionCreateRequest, ApplyChatRequest
 from app.schemas.report import PinRequest, PinnedItem
 from app.services.session_service import SessionService
 from app.services.chat_service import ChatService
@@ -66,9 +66,18 @@ async def stream_initial_content(session_id: str, mode: str = "coaching"):
 
 
 @router.get("/{session_id}/drill-down")
-async def get_drill_down(chip_id: str):
+async def get_drill_down(session_id: str, chip_id: str):
     service = SessionService()
-    result = await service.get_drill_down(chip_id)
+    result = await service.get_drill_down(session_id, chip_id)
     if not result:
         raise HTTPException(status_code=404, detail="Drill-down content not found")
     return {"content": result}
+
+
+@router.post("/{session_id}/apply-chat")
+async def apply_chat(session_id: str, request: ApplyChatRequest):
+    service = SessionService()
+    result = await service.apply_chat(session_id, request.content)
+    if not result:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"status": "applied", "session_id": session_id}

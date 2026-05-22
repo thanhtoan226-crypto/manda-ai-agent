@@ -7,8 +7,6 @@ export const REPORT_CATEGORIES = [
   "Compliance",
 ] as const;
 
-export type ReportCategory = (typeof REPORT_CATEGORIES)[number];
-
 export const CATEGORY_COLORS: Record<string, string> = {
   "People & Culture": "bg-blue-100 text-blue-700",
   Meetings: "bg-amber-100 text-amber-700",
@@ -25,9 +23,9 @@ export const CATEGORY_BORDER_COLORS: Record<string, string> = {
 
 export const MOCK_PULSE_REPORTS: PulseReport[] = [
   {
-    id: "report-1",
+    id: "pulse-1",
     title: "1-on-1 Prep: Chris Petersen",
-    agent_name: "1-on-1 Prep Report",
+    agent_name: "1-on-1 Prep Brief",
     category: "People & Culture",
     status: "focus",
     preview:
@@ -38,35 +36,35 @@ export const MOCK_PULSE_REPORTS: PulseReport[] = [
     updated_at: new Date(Date.now() - 2 * 3600000).toISOString(),
   },
   {
-    id: "report-2",
-    title: "Workload Review: Mart Thompson",
-    agent_name: "Workload Analyzer",
+    id: "pulse-2",
+    title: "Executive Digest: Engineering (April)",
+    agent_name: "Executive Digest Agent",
     category: "Meetings",
     status: "unread",
     preview:
-      "Mart's meeting load has increased 34% over the past quarter, with back-to-back meetings on Tuesdays and Thursdays.",
+      "Engineering dept meeting cost up 5.1% MoM, driven by cross-team alignment. 1-on-1 coverage at 74.6% below org median.",
     markdown:
-      "# Workload Review: Mart Thompson\n\n## Meeting Volume\n\n- Weekly meeting hours: 22.4 hrs (peer median: 15 hrs)\n- Back-to-back days: Tuesday, Thursday\n- Focus time: 6 hrs/week (peer median: 12 hrs)\n\n## Recommendations\n\n- Protect focus blocks on Monday and Friday\n- Delegate recurring syncs where possible\n- Consider async updates for standups",
+      "# Executive Digest: Engineering (April 2026)\n\n## At a Glance\n\n| Metric | Engineering | Org Median |\n|--------|-------------|------------|\n| Total meeting cost | $2,847,500 | $2,410,000 |\n| Avg hrs/employee | 18.4 | 16.2 |\n| 1-on-1 coverage | 74.6% | 82.1% |\n\n## Key Signals\n\n- Speedy meeting adoption at 62.3% exceeds org median\n- 1-on-1 coverage gap affects ~18 managers\n- Meeting cost 18% above median per-capita",
     created_at: new Date(Date.now() - 6 * 3600000).toISOString(),
     updated_at: new Date(Date.now() - 6 * 3600000).toISOString(),
   },
   {
-    id: "report-3",
-    title: "Team Sentiment Pulse — April",
-    agent_name: "Team Sentiment",
-    category: "People & Culture",
+    id: "pulse-3",
+    title: "Team Health Check: Platform Team",
+    agent_name: "Team Health Check",
+    category: "Wellness",
     status: "unread",
     preview:
-      "Overall team sentiment is positive (7.2/10). Response rates remain high but meeting overload signals in engineering subgroup.",
+      "Platform team avg 24.3 meeting hrs/member vs org median 18.4. After-hours meetings at 2.7x org average.",
     markdown:
-      "# Team Sentiment Pulse — April\n\n## Overall Score\n\n7.2/10 — Slightly above org average (6.8/10)\n\n## Key Signals\n\n- Positive: Strong cross-team collaboration signals\n- Neutral: Meeting load steady vs. March\n- Concern: Engineering subgroup showing burnout indicators",
+      "# Team Health Check: Platform Team\n\n## Team Snapshot\n\n| Metric | Platform | Org Median |\n|--------|----------|------------|\n| Avg meeting hrs/member | 24.3 | 18.4 |\n| 1-on-1 coverage | 68.4% | 82.1% |\n| After-hours meetings | 8.5 hrs | 3.2 hrs |\n\n## Areas of Concern\n\n- After-hours meetings 2.7x org median\n- 1-on-1 coverage gap affects 4 members\n- Quality scores below org median",
     created_at: new Date(Date.now() - 24 * 3600000).toISOString(),
     updated_at: new Date(Date.now() - 24 * 3600000).toISOString(),
   },
   {
-    id: "report-4",
+    id: "pulse-4",
     title: "1-on-1 Prep: Damien Nguyen",
-    agent_name: "1-on-1 Prep Report",
+    agent_name: "1-on-1 Prep Brief",
     category: "People & Culture",
     status: "focus",
     preview:
@@ -77,22 +75,22 @@ export const MOCK_PULSE_REPORTS: PulseReport[] = [
     updated_at: new Date(Date.now() - 2 * 86400000).toISOString(),
   },
   {
-    id: "report-5",
-    title: "Meeting Effectiveness: Q1 Review",
-    agent_name: "Workload Analyzer",
+    id: "pulse-5",
+    title: "Recurring Meeting Audit: Last Quarter",
+    agent_name: "Recurring Meeting Audit",
     category: "Meetings",
-    status: "all",
+    status: "focus",
     preview:
-      "Large meeting costs have decreased 12% QoQ. Speedy meeting adoption at 28% across the team, up from 19%.",
+      "14 recurring meetings totaling 42.5 hrs/month. 3 with declining attendance, 2 candidates for elimination.",
     markdown:
-      "# Meeting Effectiveness: Q1 Review\n\n## Key Metrics\n\n- Large meeting cost: Down 12% QoQ\n- Speedy meeting adoption: 28% (up from 19%)\n- Average response rate: 76%\n\n## Trends\n\n- 25-minute format gaining traction\n- Recurring meetings show lower quality scores than ad-hoc",
+      "# Recurring Meeting Audit\n\n## Summary\n\n| Metric | You | Peer Median |\n|--------|-----|-------------|\n| Monthly recurring hours | 42.5 | 34.2 |\n| % of calendar from recurring | 61.2% | 52.4% |\n\n## Recommendations\n\n- Keep 6 meetings\n- Merge 2 meetings\n- Eliminate 2 meetings\n\nPotential savings: $6,720/month",
     created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
     updated_at: new Date(Date.now() - 3 * 86400000).toISOString(),
   },
   {
-    id: "report-6",
+    id: "pulse-6",
     title: "Wellness Check: Jessie Martinez",
-    agent_name: "Team Sentiment",
+    agent_name: "Team Health Check",
     category: "Wellness",
     status: "unread",
     preview:
@@ -103,22 +101,22 @@ export const MOCK_PULSE_REPORTS: PulseReport[] = [
     updated_at: new Date(Date.now() - 4 * 86400000).toISOString(),
   },
   {
-    id: "report-7",
+    id: "pulse-7",
     title: "Compliance: Fair Meeting Practices",
-    agent_name: "1-on-1 Prep Report",
+    agent_name: "Recurring Meeting Audit",
     category: "Compliance",
-    status: "all",
+    status: "archived",
     preview:
-      "All managers meeting the minimum 1:1 cadence requirement. 2 managers have reschedule rates above 50%.",
+      "2 meetings flagged for no agenda. Compliance gap in vendor sync documentation.",
     markdown:
       "# Compliance: Fair Meeting Practices\n\n## 1:1 Coverage\n\n- 100% of managers meeting minimum 1:1 cadence\n- 2 managers with reschedule rates > 50%\n\n## Outside-Hours Policy\n\n- 3 employees with recurring outside-hours meetings\n- All flagged for HR review",
     created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
     updated_at: new Date(Date.now() - 5 * 86400000).toISOString(),
   },
   {
-    id: "report-8",
+    id: "pulse-8",
     title: "1-on-1 Prep: Johnny Walsh",
-    agent_name: "1-on-1 Prep Report",
+    agent_name: "1-on-1 Prep Brief",
     category: "People & Culture",
     status: "archived",
     preview:
@@ -129,31 +127,29 @@ export const MOCK_PULSE_REPORTS: PulseReport[] = [
     updated_at: new Date(Date.now() - 7 * 86400000).toISOString(),
   },
   {
-    id: "report-9",
-    title: "Burnout Risk Assessment — Engineering",
-    agent_name: "Workload Analyzer",
-    category: "Wellness",
-    status: "all",
+    id: "pulse-9",
+    title: "Executive Digest: Company-wide (Q1)",
+    agent_name: "Executive Digest Agent",
+    category: "Meetings",
+    status: "archived",
     preview:
-      "3 of 8 engineers in the team showing 2+ burnout indicators. Wednesday is the most overloaded day across the team.",
+      "Company-wide meeting cost $12.4M in Q1. Quality scores improving +2.1 pts from Q4.",
     markdown:
-      "# Burnout Risk Assessment — Engineering\n\n## At-Risk Indicators\n\n3 of 8 engineers showing 2+ burnout indicators:\n- Outside-hours meetings\n- Back-to-back clustering\n- Focus time below 5 hrs/week\n\n## Team Patterns\n\n- Wednesday most overloaded day\n- Average meeting load: 22 hrs/week (org median: 15 hrs)",
+      "# Executive Digest: Company-wide (Q1 2026)\n\n## At a Glance\n\nTotal company meeting cost: $12.4M in Q1, up 3.2% from Q4. Quality scores improved to 69.8% (+2.1 pts).\n\n## Department Comparison\n\n| Department | Cost | Hrs/Employee | Quality |\n|------------|------|-------------|--------|\n| Engineering | $2.85M | 18.4 | 67.4% |\n| Product | $1.92M | 16.1 | 72.8% |\n| Sales | $2.41M | 22.3 | 61.2% |",
     created_at: new Date(Date.now() - 8 * 86400000).toISOString(),
     updated_at: new Date(Date.now() - 8 * 86400000).toISOString(),
   },
   {
-    id: "report-10",
-    title: "Compliance: Meeting Policy Adherence",
-    agent_name: "Workload Analyzer",
-    category: "Compliance",
+    id: "pulse-10",
+    title: "Team Health Check: DevOps Team",
+    agent_name: "Team Health Check",
+    category: "Wellness",
     status: "archived",
     preview:
-      "87% of meetings comply with the 25-minute default policy. Large meetings (8+ attendees) show lower agenda usage at 23%.",
+      "DevOps team after-hours load is 3x org average. On-call overlap with standups is the primary driver.",
     markdown:
-      "# Meeting Policy Adherence\n\n## Speedy Meeting Adoption\n\n87% of new meetings use 25-minute format\n\n## Large Meeting Compliance\n\n- Agenda usage for 8+ attendee meetings: 23%\n- Policy requires agenda for all meetings with 10+ attendees\n- 4 meetings non-compliant this month",
+      "# Team Health Check: DevOps Team\n\n## Concerns\n\n- After-hours load driven by on-call + standup overlap\n- Lowest quality score among Engineering teams (58.9%)\n- 1-on-1 coverage at 62% — critical gap\n\n## Recommendation\n\nMove to async standup format for on-call rotation members.",
     created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
     updated_at: new Date(Date.now() - 10 * 86400000).toISOString(),
   },
 ];
-
-export const MOCK_REPORTS = MOCK_PULSE_REPORTS;

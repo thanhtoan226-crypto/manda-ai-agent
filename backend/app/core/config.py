@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     LLM_API_KEY: str = ""
     LLM_BASE_URL: str = "https://api.z.ai/api/paas/v4/"
     LLM_MODEL: str = "glm-5.1"
+    LLM_TIMEOUT: int = 60
+    LLM_MAX_TOKENS: int = 4096
 
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./manda.db"

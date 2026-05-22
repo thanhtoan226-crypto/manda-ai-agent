@@ -1,4 +1,4 @@
-# Agent Mock Data
+# Agent Reference Data
 
 ## Pulse Reports
 
@@ -16,13 +16,22 @@ interface PulseReport {
 }
 ```
 
-10 mock reports with varied categories, statuses, and dates. Category color mapping:
+10 sample reports with varied categories, statuses, and dates. Category color mapping:
 - People & Culture → blue
 - Meetings → amber
 - Wellness → emerald
 - Compliance → purple
 
 ## Agents
+
+4 MVP agents, each with a corresponding spec in `docs/features/pulse-agents/`.
+
+| Agent | Browse Category | Report Category | Spec |
+|-------|----------------|-----------------|------|
+| 1-on-1 Prep Report | People Management | People & Culture | [1on1-prep-brief.md](../features/pulse-agents/1on1-prep-brief.md) |
+| Executive Digest | Leadership & Strategy | Meetings | [executive-digest.md](../features/pulse-agents/executive-digest.md) |
+| Recurring Meeting Audit | Productivity & Efficiency | Meetings | [recurring-meeting-audit.md](../features/pulse-agents/recurring-meeting-audit.md) |
+| Team Health Check | People Management | Wellness | [team-health-check.md](../features/pulse-agents/team-health-check.md) |
 
 ```json
 [
@@ -31,36 +40,43 @@ interface PulseReport {
     "name": "1-on-1 Prep Report",
     "description": "Generate manager prep briefs for upcoming 1-on-1s",
     "icon": "user-check",
-    "category": "Management",
+    "category": "People Management",
     "is_favorite": true,
     "usage_count": 142
   },
   {
-    "id": "agent-workload",
-    "name": "Workload Analyzer",
-    "description": "Analyze team capacity and burnout risks",
+    "id": "agent-executive",
+    "name": "Executive Digest",
+    "description": "Generate executive-level dashboards and signal reports for company-wide or department-level meeting analytics",
     "icon": "bar-chart-3",
-    "category": "Analytics",
-    "is_favorite": false,
+    "category": "Leadership & Strategy",
+    "is_favorite": true,
     "usage_count": 98
   },
   {
-    "id": "agent-sentiment",
-    "name": "Team Sentiment",
-    "description": "Surface engagement and morale signals from team data",
-    "icon": "heart-pulse",
-    "category": "Analytics",
-    "is_favorite": true,
+    "id": "agent-recurring",
+    "name": "Recurring Meeting Audit",
+    "description": "Review all recurring meetings for cost, quality, and attendance with actionable recommendations",
+    "icon": "repeat",
+    "category": "Productivity & Efficiency",
+    "is_favorite": false,
     "usage_count": 67
   },
   {
-    "id": "agent-review",
-    "name": "Review Writer",
-    "description": "Draft performance review summaries",
-    "icon": "file-text",
-    "category": "Management",
+    "id": "agent-team-health",
+    "name": "Team Health Check",
+    "description": "Measure team health related to meeting patterns with engagement, workload, and collaboration insights",
+    "icon": "heart-pulse",
+    "category": "People Management",
     "is_favorite": false,
     "usage_count": 55
   }
 ]
 ```
+
+### Category Systems
+
+Two separate category systems serve different purposes:
+
+1. **Browse Categories** — group agents on the Browse Agents landing page carousel (People Management, Leadership & Strategy, Productivity & Efficiency)
+2. **Report Categories** — classify generated reports in the Pulse feed for filtering (People & Culture, Meetings, Wellness, Compliance)

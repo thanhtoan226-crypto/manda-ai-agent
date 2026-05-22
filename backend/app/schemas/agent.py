@@ -8,9 +8,13 @@ class AgentInfo(BaseModel):
     description: str
     icon: str
     category: str
+    purpose: Optional[str] = None
+    tags: list[str] = []
+    integrations: list[str] = []
     is_favorite: bool
     usage_count: int
     last_used: Optional[str] = None
+    last_generated: Optional[str] = None
 
 
 class AgentListResponse(BaseModel):

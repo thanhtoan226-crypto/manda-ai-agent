@@ -4,21 +4,20 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import SessionPanel from "@/components/SessionPanel";
 import MainCanvas from "@/components/MainCanvas";
-import ChatPanel from "@/components/ChatPanel";
 import ScheduleModal from "@/components/ScheduleModal";
 import {
   fetchSessions,
   fetchSession,
   createSession,
-  pinItem,
-  fetchPinned,
   setSessionMode,
   fetchDrillDown,
   fetchReport,
   updateReport,
   streamContent,
+  streamChat,
+  applyChatToReport,
 } from "@/lib/api";
-import { MOCK_MODULES } from "@/lib/mock-content";
+import { MOCK_MODULES_BY_AGENT, MOCK_MODULES } from "@/lib/mock-content";
 import type {
   SessionSummary,
   SessionDetail,
@@ -29,7 +28,7 @@ import type {
 
 function WorkbenchContent() {
   const searchParams = useSearchParams();
-  const agentId = searchParams.get("agentId");
+  const agentId = searchParams.get("agentId") || "agent-1on1";
 
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -41,6 +40,11 @@ function WorkbenchContent() {
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [useMock, setUseMock] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [sessionCollapsed, setSessionCollapsed] = useState(true);
+
+  const activeMode = sessionDetail?.mode || sessions.find((s) => s.id === activeSessionId)?.mode || null;
+  const sessionTitle = sessionDetail?.title || sessions.find((s) => s.id === activeSessionId)?.title || "Workbench";
 
   // Load sessions + create a new one if coming from agent card
   useEffect(() => {
@@ -48,14 +52,12 @@ function WorkbenchContent() {
 
     async function init() {
       try {
-        // Fetch existing sessions for sidebar
         const res = await fetchSessions(agentId || undefined);
         if (cancelled) return;
         const existing = res.sessions ?? [];
         setSessions(existing);
 
         if (agentId) {
-          // Coming from "Run" button — always create a fresh session
           try {
             const detail = await createSession(agentId);
             if (cancelled) return;
@@ -74,7 +76,6 @@ function WorkbenchContent() {
             setMessages([]);
             setExcludedItemIds(new Set());
           } catch {
-            // API create failed — use mock
             if (cancelled) return;
             setUseMock(true);
             const mockSession: SessionSummary = {
@@ -93,13 +94,11 @@ function WorkbenchContent() {
             setExcludedItemIds(new Set());
           }
         } else {
-          // No agentId — just show existing sessions, pick first if any
           if (existing.length > 0) {
             setActiveSessionId(existing[0].id);
           }
         }
       } catch {
-        // API unavailable — use mock
         if (cancelled) return;
         setUseMock(true);
         const mockSession: SessionSummary = {
@@ -124,13 +123,12 @@ function WorkbenchContent() {
     return () => { cancelled = true; };
   }, [agentId]);
 
-  // Load active session detail (skip if using mock or session has no mode)
+  // Load active session detail
   useEffect(() => {
     if (!activeSessionId || useMock) return;
     fetchSession(activeSessionId)
       .then((detail) => {
         setSessionDetail(detail);
-        // Only load modules if session already has a mode (existing content)
         if (detail.mode) {
           setModules(detail.modules ?? []);
         } else {
@@ -148,7 +146,7 @@ function WorkbenchContent() {
     if (useMock) {
       const newMock: SessionSummary = {
         id: `mock-session-${Date.now()}`,
-        agent_id: agentId || "agent-listing",
+        agent_id: agentId,
         title: "New Session",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -164,7 +162,7 @@ function WorkbenchContent() {
       return;
     }
     try {
-      const detail = await createSession(agentId || "agent-listing");
+      const detail = await createSession(agentId);
       setActiveSessionId(detail.id);
       setSessions((prev) => [
         {
@@ -193,9 +191,11 @@ function WorkbenchContent() {
 
   const handleSetMode = useCallback(
     async (mode: string) => {
+      const agentModules = MOCK_MODULES_BY_AGENT[agentId] || MOCK_MODULES;
+
       if (useMock) {
         setSessionDetail((prev) =>
-          prev ? { ...prev, mode } : { id: `mock-session-${Date.now()}`, agent_id: agentId || "", title: "New Session", created_at: new Date().toISOString(), updated_at: new Date().toISOString(), preview: "", mode, modules: [], messages: [] }
+          prev ? { ...prev, mode } : { id: `mock-session-${Date.now()}`, agent_id: agentId, title: "New Session", created_at: new Date().toISOString(), updated_at: new Date().toISOString(), preview: "", mode, modules: [], messages: [] }
         );
         setSessions((prev) =>
           prev.map((s) => s.id === activeSessionId ? { ...s, mode } : s)
@@ -203,7 +203,7 @@ function WorkbenchContent() {
         setModules([]);
         setExcludedItemIds(new Set());
         await new Promise((r) => setTimeout(r, 1500));
-        setModules(MOCK_MODULES);
+        setModules(agentModules);
         return;
       }
 
@@ -225,14 +225,11 @@ function WorkbenchContent() {
         setModules(detail.modules ?? []);
       } catch (e) {
         console.error(e);
-        // Fallback to mock content if streaming fails
-        setSessionDetail((prev) =>
-          prev ? { ...prev, mode } : null
-        );
+        setSessionDetail((prev) => prev ? { ...prev, mode } : null);
         setSessions((prev) =>
           prev.map((s) => (s.id === activeSessionId ? { ...s, mode } : s))
         );
-        setModules(MOCK_MODULES);
+        setModules(agentModules);
       }
     },
     [activeSessionId, agentId, useMock]
@@ -253,9 +250,9 @@ function WorkbenchContent() {
   const handleDrillDown = useCallback(async (chipId: string): Promise<string> => {
     if (useMock) {
       await new Promise((r) => setTimeout(r, 800));
-      return `Drill-down data for ${chipId}:\n\n- Raw data source: MLS + CRM transaction data\n- Time period: Last 30 days\n- Confidence level: 92%\n- Data points analyzed: 347\n- Last updated: ${new Date().toLocaleString()}`;
+      return `Drill-down data for ${chipId}:\n\n- Raw data source: Calendar integration data\n- Time period: Last 30 days\n- Confidence level: 92%\n- Data points analyzed: 347\n- Last updated: ${new Date().toLocaleString()}`;
     }
-    const result = await fetchDrillDown(chipId);
+    const result = await fetchDrillDown(activeSessionId || "0", chipId);
     return result.content;
   }, [useMock]);
 
@@ -269,27 +266,50 @@ function WorkbenchContent() {
       };
       setMessages((prev) => [...prev, userMsg]);
 
-      await new Promise((r) => setTimeout(r, 1200));
+      if (useMock || !activeSessionId) {
+        await new Promise((r) => setTimeout(r, 1200));
+        const assistantMsg: ChatMessage = {
+          id: `msg-ask-reply-${Date.now()}`,
+          role: "assistant",
+          content: `Based on the analysis of ${chipLabel.toLowerCase()}, this observation is supported by multiple data points from the last 30 days of calendar and meeting data. I recommend reviewing the specific metrics in the Data Interpreter section for detailed numbers and trends.`,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, assistantMsg]);
+        return;
+      }
 
-      const MOCK_ANSWERS: Record<string, string> = {
-        "chip-strengths": "Based on the analysis, the key driver behind these strengths is Sarah's exceptional pricing strategy combined with her client communication discipline. Her list-to-close ratio of 98.2% comes from accurate initial pricing that minimizes negotiation rounds, while her client satisfaction scores reflect a proactive communication approach where she updates clients even when there's no new development.",
-        "chip-patterns": "The primary driver of the March conversion dip was the 40% spike in new listings without a corresponding increase in follow-up capacity. Sarah was managing 15 active listings during the spring surge, well above her optimal 8-10 range. The data shows conversion efficiency drops sharply above 10 active listings, suggesting a capacity ceiling that could be addressed through a showing assistant or transaction coordinator.",
-        "chip-meetings": "Sarah's active deals reveal a strategic focus on single-family homes, which command higher commissions but take longer to close. The 142 Oak Ridge Dr negotiation has been ongoing for 12 days with a $15K gap — consider proposing a creative compromise such as including closing cost credits. The Harbor View listing at $892K has had only 3 showings in 21 days, suggesting it may be priced above the current market ceiling for the neighborhood.",
-        "chip-starters": "Here are suggested discussion approaches:\n\n1. Pipeline optimization: \"Your pipeline is strong at $2.84M, but the single-family concentration creates longer close cycles. Would shifting 20% of focus to condos improve cash flow velocity?\"\n\n2. Inspection fallout: \"Two deals fell through during inspection contingency in March. Have you considered recommending pre-listing inspections to reduce buyer surprise?\"\n\n3. Showing strategy: \"Your weekday showings convert 3x better than weekend open houses. What if we made weekday private showings the priority and used weekends purely for lead generation?\"",
-        "chip-data": "The data interpretation covers the last 30 days of listing and transaction data from MLS and CRM, cross-referenced with peer benchmarks (team of 12 agents at Horizon Realty Group). Key statistical highlights: closings at 90th percentile, days on market at 15th percentile (lower is better), client satisfaction at 92nd percentile, commission per deal at 78th percentile with volume making up the difference.",
-      };
-
-      const answer = MOCK_ANSWERS[chipId] || "Based on the analysis, this observation is supported by multiple data points from the last 30 days of MLS and CRM transaction data. The trend correlates with seasonal market patterns where spring inventory surges create both opportunity and capacity strain. Implementing a structured pipeline management system with clear follow-up cadences could help maintain conversion quality during high-volume periods.";
-
+      const assistantId = `msg-ask-reply-${Date.now()}`;
       const assistantMsg: ChatMessage = {
-        id: `msg-ask-reply-${Date.now()}`,
+        id: assistantId,
         role: "assistant",
-        content: answer,
+        content: "",
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMsg]);
+
+      try {
+        await streamChat(activeSessionId, `[${chipLabel}] ${question}`, activeMode || undefined, (chunk) => {
+          if (chunk.type === "text" && chunk.content) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, content: m.content + chunk.content }
+                  : m
+              )
+            );
+          }
+        });
+      } catch {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? { ...m, content: m.content || "[Error: Could not get response]" }
+              : m
+          )
+        );
+      }
     },
-    []
+    [agentId, activeSessionId, activeMode, useMock]
   );
 
   const handleUpdateReport = useCallback(
@@ -308,15 +328,29 @@ function WorkbenchContent() {
 
   const handleApplyToReport = useCallback(
     async (content: string) => {
-      // Chat "Apply to report" — handled via excludedItemIds in the new model
-      // For chat suggestions, they're always included (no exclusion tracking)
-      // This is a no-op in the new model since all content is included by default
+      if (useMock) {
+        setReport((prev) =>
+          prev
+            ? { ...prev, markdown: prev.markdown + "\n\n" + content }
+            : null
+        );
+        setToast("Report updated");
+        setTimeout(() => setToast(null), 3000);
+        return;
+      }
+      if (!activeSessionId) return;
+      try {
+        await applyChatToReport(activeSessionId, content);
+        const updated = await fetchReport(activeSessionId);
+        setReport(updated);
+        setToast("Report updated");
+        setTimeout(() => setToast(null), 3000);
+      } catch (e) {
+        console.error(e);
+      }
     },
     [activeSessionId, useMock]
   );
-
-  const activeMode = sessionDetail?.mode || sessions.find((s) => s.id === activeSessionId)?.mode || null;
-  const sessionTitle = sessionDetail?.title || sessions.find((s) => s.id === activeSessionId)?.title || "Workbench";
 
   if (!initialized) {
     return <div className="flex items-center justify-center h-full text-slate-400">Loading...</div>;
@@ -329,10 +363,13 @@ function WorkbenchContent() {
         activeId={activeSessionId}
         onSelect={handleSelectSession}
         onNewSession={handleNewSession}
+        collapsed={sessionCollapsed}
+        onToggleCollapse={() => setSessionCollapsed(!sessionCollapsed)}
       />
       <MainCanvas
         sessionTitle={sessionTitle}
         sessionId={activeSessionId || ""}
+        agentId={agentId}
         agentName=""
         mode={activeMode}
         modules={modules}
@@ -344,19 +381,21 @@ function WorkbenchContent() {
         onUpdateReport={handleUpdateReport}
         onOpenSchedule={() => setScheduleOpen(true)}
         onAskQuestion={handleAskQuestion}
-      />
-      <ChatPanel
-        sessionId={activeSessionId || ""}
-        mode={activeMode}
-        messages={messages}
-        onMessagesUpdate={setMessages}
+        chatMessages={messages}
+        onChatMessagesUpdate={setMessages}
         onApplyToReport={handleApplyToReport}
+        showToast={(msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); }}
       />
       <ScheduleModal
         open={scheduleOpen}
         onClose={() => setScheduleOpen(false)}
         sessionId={activeSessionId || ""}
       />
+      {toast && (
+        <div className="fixed bottom-6 right-6 bg-[#0a3542] text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium z-50 animate-in fade-in slide-in-from-bottom-2">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

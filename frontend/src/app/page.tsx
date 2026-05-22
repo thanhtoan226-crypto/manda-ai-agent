@@ -44,9 +44,9 @@ export default function AgentHub() {
 
   const favorites = agents.filter((a) => a.is_favorite);
   const popular = [...agents].sort((a, b) => b.usage_count - a.usage_count);
-  const salesPerformance = agents.filter((a) => a.category === "Sales Performance");
-  const marketIntelligence = agents.filter((a) => a.category === "Market Intelligence");
-  const clientSuccess = agents.filter((a) => a.category === "Client Success");
+  const salesPerformance = agents.filter((a) => a.category === "People Management");
+  const marketIntelligence = agents.filter((a) => a.category === "Leadership & Strategy");
+  const clientSuccess = agents.filter((a) => a.category === "Productivity & Efficiency");
 
   if (loading) {
     return (
@@ -89,21 +89,21 @@ export default function AgentHub() {
         onToggleFavorite={handleToggleFavorite}
       />
       <AgentCarousel
-        title="Sales Performance"
+        title="People Management"
         agents={salesPerformance}
         onRun={handleRun}
         onSchedule={handleSchedule}
         onToggleFavorite={handleToggleFavorite}
       />
       <AgentCarousel
-        title="Market Intelligence"
+        title="Leadership & Strategy"
         agents={marketIntelligence}
         onRun={handleRun}
         onSchedule={handleSchedule}
         onToggleFavorite={handleToggleFavorite}
       />
       <AgentCarousel
-        title="Client Success"
+        title="Productivity & Efficiency"
         agents={clientSuccess}
         onRun={handleRun}
         onSchedule={handleSchedule}

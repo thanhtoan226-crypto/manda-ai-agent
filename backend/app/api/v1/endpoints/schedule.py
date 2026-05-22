@@ -1,5 +1,4 @@
-from typing import Union
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.schemas.schedule import ScheduleRequest, ScheduleResponse
 from app.services.schedule_service import ScheduleService
@@ -13,10 +12,10 @@ async def create_schedule(session_id: str, request: ScheduleRequest):
     return await service.create_schedule(session_id, request)
 
 
-@router.get("/{session_id}")
+@router.get("/{session_id}", response_model=ScheduleResponse)
 async def get_schedule(session_id: str):
     service = ScheduleService()
     result = await service.get_schedule(session_id)
     if not result:
-        return {"message": "No schedule found"}
+        raise HTTPException(status_code=404, detail="No schedule found")
     return result

@@ -25,7 +25,6 @@ class ChipInfo(BaseModel):
     id: str
     label: str
     enabled: bool
-    disabled: bool = False
 
 
 class ContentModule(BaseModel):
@@ -45,3 +44,7 @@ class SessionDetail(BaseModel):
     mode: Optional[str] = None
     modules: list[ContentModule]
     messages: list[dict]
+
+
+class ApplyChatRequest(BaseModel):
+    content: str

@@ -1,4 +1,4 @@
-# Executive Digest Agent
+# AI Agent name: Executive Digest Agent
 
 Generates executive-level dashboards and signal reports for company-wide or department-level meeting analytics.
 

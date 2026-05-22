@@ -1,4 +1,4 @@
-# 1-on-1 Mock Report: Chris Petersen
+# 1-on-1 Sample Report: Chris Petersen
 
 Prepared 6 May 2026 - Data from 1 April to 30 April 2026
 Mode: Coaching & Support
@@ -97,6 +97,24 @@ Chris organises a significant portion of his own meetings. Key recurring ones he
 - Ad-hoc vendor coordination (Google, Atlassian, Searce)
 
 His organised meetings have a quality score of 65.2% overall. Ad-hoc meetings he organises score higher (69.2%) than recurring ones (62.3%). Agenda usage is low at 17.4%, though context clarity is high at 91.3%.
+
+**LLM Feedback:** Chris's organised meeting quality varies considerably. His JPD Prioritisation meeting stands out with a 98% quality score and consistent agenda usage — this should be the model for his other recurring meetings. The Apps Team Standup scores lowest among his organised meetings, and the lack of agenda (17.4% overall usage) is a drag on quality. The high context clarity (91.3%) suggests Chris communicates purpose well when creating meetings, but doesn't formalise it with agendas. Recommendation: adopt the JPD Prioritisation format (agenda + desired outcomes) as the standard for all meetings he organises.
+
+### Ad-hoc Meetings
+
+Chris had 53 ad-hoc (non-recurring) meetings in April, accounting for 28.2 hrs (45% of his total meeting time).
+
+Key ad-hoc clusters:
+- Vendor coordination (Google, Atlassian, Searce): 14 meetings, 10.2 hrs
+- Cross-team alignment syncs: 12 meetings, 7.8 hrs
+- 1:1 check-ins (beyond recurring): 9 meetings, 3.8 hrs
+- Project-specific workshops: 8 meetings, 4.2 hrs
+- Interview panels: 6 meetings, 1.6 hrs
+- Other: 4 meetings, 0.6 hrs
+
+Ad-hoc meetings have a quality score of 69.2% vs 62.3% for recurring — likely because they tend to be smaller (avg 3.2 attendees) and more focused. Speedy meeting adoption is strong at 44.1% for ad-hoc vs 31.2% for recurring.
+
+**LLM Feedback:** Chris's ad-hoc meeting pattern reveals two important signals. First, the vendor coordination cluster (10.2 hrs) is substantial and suggests he's carrying significant external relationship management load — this is typically a senior+ or principal EM responsibility. Second, the cross-team alignment syncs (7.8 hrs) indicate he's a connector between teams, which is valuable but can become a bottleneck. The higher quality scores on ad-hoc vs recurring (69.2% vs 62.3%) suggest Chris is more intentional when creating one-off meetings than when maintaining standing ones. The 9 ad-hoc 1:1 check-ins beyond his recurring cadence show he's responsive to team needs, but also that his recurring 1:1 schedule may not fully cover what his reports need.
 
 ### 1:1 Coverage (as a people manager)
 

@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Activity, Inbox, Archive, Eye, Filter, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MOCK_REPORTS, REPORT_CATEGORIES } from "@/lib/mock-pulse-data";
-import type { ReportCategory } from "@/lib/mock-pulse-data";
+import { REPORT_CATEGORIES } from "@/lib/mock-pulse-data";
+import type { ReportCategory } from "@/types/pulse";
+import { fetchPulseReports } from "@/lib/api";
 import PulseReportCard from "@/components/PulseReportCard";
+import type { PulseReport } from "@/types/pulse";
 
 type Tab = "focus" | "all" | "unread" | "archived";
 
@@ -24,31 +26,35 @@ function PulseContent() {
   const [categoryFilter, setCategoryFilter] = useState<ReportCategory | "all">("all");
   const [timeFrame, setTimeFrame] = useState<TimeFrame>("all-time");
   const [currentPage, setCurrentPage] = useState(1);
+  const [reports, setReports] = useState<PulseReport[]>([]);
+  const [initialized, setInitialized] = useState(false);
+
+  const loadReports = useCallback(async () => {
+    try {
+      const statusFilter = activeTab === "all" ? undefined : activeTab;
+      const categoryParam = categoryFilter === "all" ? undefined : categoryFilter;
+      const res = await fetchPulseReports({
+        status: statusFilter,
+        category: categoryParam,
+        time_frame: timeFrame,
+      });
+      setReports((res.reports as PulseReport[]) || []);
+    } catch {
+      // fetchPulseReports already falls back to mock data
+    } finally {
+      setInitialized(true);
+    }
+  }, [activeTab, categoryFilter, timeFrame]);
+
+  useEffect(() => {
+    loadReports();
+  }, [loadReports]);
 
   const filteredReports = useMemo(() => {
-    let reports = MOCK_REPORTS;
-
-    if (activeTab === "focus") reports = reports.filter((r) => r.status === "focus");
-    else if (activeTab === "unread") reports = reports.filter((r) => r.status === "unread");
-    else if (activeTab === "archived") reports = reports.filter((r) => r.status === "archived");
-
-    if (categoryFilter !== "all") {
-      reports = reports.filter((r) => r.category === categoryFilter);
-    }
-
-    const now = Date.now();
-    if (timeFrame === "this-week") {
-      const weekAgo = now - 7 * 86400000;
-      reports = reports.filter((r) => new Date(r.created_at).getTime() > weekAgo);
-    } else if (timeFrame === "this-month") {
-      const monthAgo = now - 30 * 86400000;
-      reports = reports.filter((r) => new Date(r.created_at).getTime() > monthAgo);
-    }
-
     return reports.sort(
       (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     );
-  }, [activeTab, categoryFilter, timeFrame]);
+  }, [reports]);
 
   const totalPages = Math.max(1, Math.ceil(filteredReports.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
@@ -59,11 +65,16 @@ function PulseContent() {
   const startIndex = (safePage - 1) * PAGE_SIZE + 1;
   const endIndex = Math.min(safePage * PAGE_SIZE, filteredReports.length);
 
-  // Reset to page 1 when filters change
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
     setCurrentPage(1);
   };
+  const handleStatusChange = useCallback((reportId: string, status: string) => {
+    setReports((prev) =>
+      prev.map((r) => (r.id === reportId ? { ...r, status: status as PulseReport["status"] } : r))
+    );
+  }, []);
+
   const handleCategoryChange = (val: ReportCategory | "all") => {
     setCategoryFilter(val);
     setCurrentPage(1);
@@ -72,6 +83,10 @@ function PulseContent() {
     setTimeFrame(val);
     setCurrentPage(1);
   };
+
+  if (!initialized) {
+    return <div className="flex items-center justify-center h-full text-slate-400">Loading...</div>;
+  }
 
   return (
     <div className="p-8 overflow-y-auto h-full">
@@ -160,7 +175,7 @@ function PulseContent() {
         <>
           <div className="flex flex-col gap-3">
             {paginatedReports.map((report) => (
-              <PulseReportCard key={report.id} report={report} />
+              <PulseReportCard key={report.id} report={report} onStatusChange={handleStatusChange} />
             ))}
           </div>
 

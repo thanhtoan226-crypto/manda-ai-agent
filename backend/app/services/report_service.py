@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from app.schemas.report import ReportResponse, ReportUpdateRequest
 from app.services.mock_data import REPORTS
@@ -15,6 +16,5 @@ class ReportService:
         if not report:
             return None
         report["markdown"] = request.markdown
-        from datetime import datetime
         report["updated_at"] = datetime.now().isoformat()
         return ReportResponse(**report)

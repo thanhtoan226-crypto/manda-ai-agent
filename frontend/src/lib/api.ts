@@ -9,6 +9,7 @@ import type {
   Report,
   ScheduleConfig,
 } from "@/types/session";
+import type { PulseReport, ReportStatus } from "@/types/pulse";
 
 const API_BASE = "/api/v1";
 
@@ -72,11 +73,25 @@ export async function fetchAgents(): Promise<AgentListResponse> {
 }
 
 export async function fetchAgent(agentId: string): Promise<AgentDetailResponse> {
-  return apiFetch<AgentDetailResponse>(`/agents/${agentId}`);
+  try {
+    return await apiFetch<AgentDetailResponse>(`/agents/${agentId}`);
+  } catch {
+    const { MOCK_AGENTS } = await import("@/lib/mock-agents");
+    const agent = MOCK_AGENTS.find((a) => a.id === agentId);
+    if (!agent) throw new Error(`Agent ${agentId} not found`);
+    return { agent, modes: [] };
+  }
 }
 
 export async function toggleFavorite(agentId: string): Promise<AgentListResponse["agents"][0]> {
-  return apiFetch(`/agents/${agentId}/favorite`, { method: "PUT" });
+  try {
+    return await apiFetch(`/agents/${agentId}/favorite`, { method: "PUT" });
+  } catch {
+    const { MOCK_AGENTS } = await import("@/lib/mock-agents");
+    const agent = MOCK_AGENTS.find((a) => a.id === agentId);
+    if (agent) agent.is_favorite = !agent.is_favorite;
+    return agent!;
+  }
 }
 
 // Sessions
@@ -119,13 +134,21 @@ export async function setSessionMode(sessionId: string, mode: string): Promise<v
   await apiFetch(`/sessions/${sessionId}/mode?mode=${mode}`, { method: "PUT" });
 }
 
-export async function fetchDrillDown(chipId: string): Promise<{ content: string }> {
-  return apiFetch(`/sessions/0/drill-down?chip_id=${chipId}`);
+export async function fetchDrillDown(sessionId: string, chipId: string): Promise<{ content: string }> {
+  return apiFetch(`/sessions/${sessionId}/drill-down?chip_id=${chipId}`);
 }
 
 // Reports
 export async function fetchReport(sessionId: string): Promise<Report> {
   return apiFetch<Report>(`/reports/${sessionId}`);
+}
+
+export async function applyChatToReport(sessionId: string, content: string): Promise<void> {
+  await apiFetch(`/sessions/${sessionId}/apply-chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
 }
 
 export async function updateReport(sessionId: string, markdown: string): Promise<Report> {
@@ -177,4 +200,50 @@ export async function streamContent(
   await consumeSSE(res, (data) => {
     onChunk?.(data as { type: string; module?: unknown });
   });
+}
+
+// Pulse Reports
+export async function fetchPulseReports(filters?: {
+  status?: string;
+  category?: string;
+  time_frame?: string;
+}): Promise<{ reports: PulseReport[]; total: number }> {
+  try {
+    const params = new URLSearchParams();
+    if (filters?.status) params.set("status", filters.status);
+    if (filters?.category) params.set("category", filters.category);
+    if (filters?.time_frame) params.set("time_frame", filters.time_frame);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    return await apiFetch(`/pulse/reports${qs}`);
+  } catch {
+    const { MOCK_PULSE_REPORTS } = await import("@/lib/mock-pulse-data");
+    return { reports: MOCK_PULSE_REPORTS, total: MOCK_PULSE_REPORTS.length };
+  }
+}
+
+export async function fetchPulseReport(reportId: string): Promise<PulseReport | null> {
+  try {
+    return await apiFetch(`/pulse/reports/${reportId}`);
+  } catch {
+    const { MOCK_PULSE_REPORTS } = await import("@/lib/mock-pulse-data");
+    return MOCK_PULSE_REPORTS.find((r) => r.id === reportId) || null;
+  }
+}
+
+export async function updatePulseReportStatus(
+  reportId: string,
+  status: ReportStatus | string
+): Promise<PulseReport | null> {
+  try {
+    return await apiFetch(`/pulse/reports/${reportId}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+  } catch {
+    const { MOCK_PULSE_REPORTS } = await import("@/lib/mock-pulse-data");
+    const report = MOCK_PULSE_REPORTS.find((r) => r.id === reportId);
+    if (report) report.status = status as ReportStatus;
+    return report ?? null;
+  }
 }

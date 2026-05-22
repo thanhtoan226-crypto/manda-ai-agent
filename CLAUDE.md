@@ -41,15 +41,18 @@ Monorepo with **frontend/** (Next.js 15) and **backend/** (FastAPI).
 ```
 backend/app/
   main.py                 # FastAPI app, CORS, router mounting
-  core/config.py          # pydantic-settings (env-based)
-  agents/graph.py         # LangGraph StateGraph (TODO: no nodes yet)
-  api/v1/endpoints/       # Routers: agents, chat, sessions, reports, schedule
-  schemas/                # Pydantic request/response models
-  services/               # Business logic (all return mock data)
-  services/mock_data.py   # All in-memory demo data (AGENTS, SESSIONS, CONTENT_MODULES, etc.)
+  core/config.py          # pydantic-settings (env-based, includes LLM_ vars)
+  core/llm.py             # LLM client singleton (ChatOpenAI from langchain-openai)
+  agents/graph.py         # LangGraph StateGraph (gather_context → generate_module loop)
+  agents/prompts.py       # Agent+mode prompt templates (~15 variants)
+  agents/context.py       # Context builder (assembles agent/subject/data context)
+  api/v1/endpoints/       # Routers: agents, chat, sessions, reports, schedule, pulse
+  schemas/                # Pydantic request/response models (agent, session, pulse, content)
+  services/               # Business logic (LLM-backed with mock fallback)
+  services/mock_data.py   # In-memory demo data (AGENTS, AGENT_MODES, etc.) used as fallback
 ```
 
-Services are instantiated per-request. All data is in-memory via `mock_data.py` dicts — no database yet.
+Services are instantiated per-request. When `LLM_API_KEY` is set, chat and content generation use real LLM calls via Z.AI (OpenAI-compatible). When empty, all responses fall back to mock data from `mock_data.py`. All state is in-memory — no database yet.
 
 ### Frontend Structure
 ```
@@ -69,8 +72,12 @@ frontend/src/
 ### Key Data Flow
 1. Agent Hub (`/`) → click "Run" → `/workbench?agentId=...`
 2. Workbench: SessionPanel | MainCanvas | ChatPanel
-3. MainCanvas: guided conversation (employee → timeframe → mode → generate) → content modules
-4. Content modules: each module has Data Interpreter + insight sections (Strengths, Patterns, Meetings, Discussion Starters)
+3. MainCanvas: agent-specific guided conversation → content modules
+   - 1-on-1: employee → timeframe → mode → generate
+   - Executive: scope → timeframe → mode → generate
+   - Recurring: timeframe → mode → generate (auto-scoped)
+   - Team Health: department → team → timeframe → mode → generate
+4. Content modules: each module has Data Interpreter + agent-specific insight sections
 5. Each insight item is an individual block with Drill down / Verify / Ask a question + Unpin toggle
 6. Report View: all content minus excluded items
 
@@ -103,14 +110,37 @@ frontend/src/
 - SSE for streaming endpoints
 - Pydantic models for all request/response types
 
-## Feature Spec
+## Feature Specs
 
-The full UI/UX specification is in `docs/feature-AI-agents.md` — covers all pages, interactions, mock data schemas, and API endpoints.
+All feature specs are in `docs/features/`:
+- `agents-feature.md` — Workbench pages, agent cards, content modules, report view, chat panel, schedule
+- `pulse-agents/1on1-prep-brief.md` — 1-on-1 Prep Report flow and report structure
+- `pulse-agents/executive-digest.md` — Executive Digest flow and report structure
+- `pulse-agents/recurring-meeting-audit.md` — Recurring Meeting Audit flow and report structure
+- `pulse-agents/team-health-check.md` — Team Health Check flow and report structure
+- `modes.md` — Intent modes per agent with tone/framing guidance
+
+Mock data schemas and sample reports are in `docs/data/`. When `LLM_API_KEY` is configured, these serve as fallback data, not the primary source.
+
+## Agents
+
+4 MVP agents, each with agent-specific config via `AGENT_CONFIGS` (frontend) and `AGENT_MODES`/`AGENT_SUBJECTS`/`AGENT_MODULES` (backend):
+
+| Agent | ID | First Step | Modes |
+|-------|----|-----------|-------|
+| 1-on-1 Prep Report | `agent-1on1` | select-employee | Coaching, Performance Review, Workload, Investigation |
+| Executive Digest | `agent-executive` | select-scope | Talent Focus, Board-Ready, Capacity, Risk |
+| Recurring Meeting Audit | `agent-recurring` | skip-to-timeframe | Cost Optimisation, Quality Review, Attendance |
+| Team Health Check | `agent-team-health` | select-department | Coaching, Performance Review, Workload, Investigation |
+
+Browse categories: People Management, Leadership & Strategy, Productivity & Efficiency
+Report categories: People & Culture, Meetings, Wellness, Compliance
 
 ## Current State
 
-- **All AI responses are mocked** — no real LLM integration
-- LangGraph agent graph has no nodes/edges yet
+- AI responses use real LLM integration (Z.AI via langchain-openai). Set `LLM_API_KEY` in `.env` to enable; falls back to mock data when empty.
+- LangGraph agent graph orchestrates content generation: gather_context → generate_module loop with structured output
 - No authentication, no database migrations, no real Google Docs export
 - Backend `models/`, `tools/`, `utils/` directories are empty
 - Test directories exist but have no tests
+- LLM env vars: `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_TIMEOUT`, `LLM_MAX_TOKENS`

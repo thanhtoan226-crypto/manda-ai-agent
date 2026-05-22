@@ -1,6 +1,6 @@
 from typing import Optional
 from app.schemas.agent import AgentInfo, AgentListResponse, AgentDetailResponse, ConversationMode
-from app.services.mock_data import AGENTS, CONVERSATION_MODES
+from app.services.mock_data import AGENTS, AGENT_MODES
 
 
 class AgentService:
@@ -15,7 +15,7 @@ class AgentService:
             return None
         return AgentDetailResponse(
             agent=AgentInfo(**agent),
-            modes=[ConversationMode(**m) for m in CONVERSATION_MODES],
+            modes=[ConversationMode(**m) for m in AGENT_MODES.get(agent_id, [])],
         )
 
     async def toggle_favorite(self, agent_id: str) -> Optional[AgentInfo]:

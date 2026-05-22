@@ -1,10 +1,13 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Clock, User } from "lucide-react";
+import { ArrowLeft, Clock, User, Pin, Archive, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MOCK_REPORTS, CATEGORY_COLORS } from "@/lib/mock-pulse-data";
-import type { ReportCategory } from "@/lib/mock-pulse-data";
+import { CATEGORY_COLORS, CATEGORY_BORDER_COLORS } from "@/lib/mock-pulse-data";
+import { fetchPulseReport, updatePulseReportStatus } from "@/lib/api";
+import type { PulseReport, ReportCategory } from "@/types/pulse";
+import ReactMarkdown from "react-markdown";
 
 function formatFullDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -20,7 +23,44 @@ export default function ReportDetailPage() {
   const params = useParams();
   const router = useRouter();
   const reportId = params.reportId as string;
-  const report = MOCK_REPORTS.find((r) => r.id === reportId);
+  const [report, setReport] = useState<PulseReport | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchPulseReport(reportId);
+        if (!cancelled) setReport(data);
+      } catch {
+        // fetchPulseReport already falls back to mock
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [reportId]);
+
+  useEffect(() => {
+    if (report && report.status === "unread") {
+      updatePulseReportStatus(report.id, "read").catch(() => {});
+      setReport((prev) => prev ? { ...prev, status: "read" } : prev);
+    }
+  }, [report?.id, report?.status]);
+
+  const handleStatusChange = (status: string) => {
+    if (!report) return;
+    updatePulseReportStatus(report.id, status).catch(() => {});
+    setReport((prev) => prev ? { ...prev, status: status as PulseReport["status"] } : prev);
+    const labels: Record<string, string> = { focus: "Pinned to focus", archived: "Archived", read: "Marked as read" };
+    setToast(labels[status] || "Status updated");
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-full text-slate-400">Loading...</div>;
+  }
 
   if (!report) {
     return (
@@ -38,15 +78,18 @@ export default function ReportDetailPage() {
   }
 
   const category = report.category as ReportCategory;
-  const colorClass = CATEGORY_COLORS[category] || "bg-slate-100 text-slate-700 border-slate-200";
-
-  // Split markdown into sections by ## headers
-  const sections = report.markdown
-    .split("\n")
-    .filter((line) => line.trim() !== "");
+  const colorClass = CATEGORY_COLORS[category] || "bg-slate-100 text-slate-700";
+  const borderClass = CATEGORY_BORDER_COLORS[category] || "border-l-slate-400";
 
   return (
-    <div className="p-8 overflow-y-auto h-full max-w-3xl">
+    <div className="p-8 overflow-y-auto h-full max-w-3xl relative">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-6 right-6 z-50 bg-[#0a3542] text-white px-4 py-2 rounded-lg shadow-lg text-sm animate-in fade-in">
+          {toast}
+        </div>
+      )}
+
       {/* Back button */}
       <button
         onClick={() => router.push("/pulse")}
@@ -67,6 +110,12 @@ export default function ReportDetailPage() {
           >
             {report.category}
           </span>
+          {report.status === "focus" && (
+            <span className="flex items-center gap-1 text-xs text-accent font-medium">
+              <Pin size={12} />
+              Pinned
+            </span>
+          )}
           {report.status === "unread" && (
             <span className="flex items-center gap-1 text-xs text-[#00cca2] font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-[#00cca2]" />
@@ -75,15 +124,40 @@ export default function ReportDetailPage() {
           )}
         </div>
         <h1 className="text-2xl font-bold text-[#0a3542] mb-2">{report.title}</h1>
-        <div className="flex items-center gap-4 text-sm text-slate-500">
-          <span className="flex items-center gap-1">
-            <User size={14} />
-            {report.agent_name}
-          </span>
-          <span className="flex items-center gap-1">
-            <Clock size={14} />
-            {formatFullDate(report.updated_at)}
-          </span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 text-sm text-slate-500">
+            <span className="flex items-center gap-1">
+              <User size={14} />
+              {report.agent_name}
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock size={14} />
+              {formatFullDate(report.updated_at)}
+            </span>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleStatusChange(report.status === "focus" ? "read" : "focus")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                report.status === "focus"
+                  ? "border-accent/30 text-accent bg-accent/5 hover:bg-accent/10"
+                  : "border-slate-200 text-slate-500 hover:text-accent hover:border-accent/30"
+              )}
+            >
+              <Pin size={12} />
+              {report.status === "focus" ? "Unpin" : "Pin to Focus"}
+            </button>
+            <button
+              onClick={() => handleStatusChange("archived")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-colors"
+            >
+              <Archive size={12} />
+              Archive
+            </button>
+          </div>
         </div>
       </div>
 
@@ -91,50 +165,12 @@ export default function ReportDetailPage() {
       <div className="border-t border-slate-200 mb-6" />
 
       {/* Report content */}
-      <div className="prose prose-sm max-w-none">
-        {sections.map((line, i) => {
-          if (line.startsWith("# ")) {
-            return (
-              <h1 key={i} className="text-xl font-bold text-[#0a3542] mb-4">
-                {line.replace(/^# /, "")}
-              </h1>
-            );
-          }
-          if (line.startsWith("## ")) {
-            return (
-              <h2 key={i} className="text-base font-semibold text-[#0a3542] mt-6 mb-3 border-l-3 border-l-[#00cca2] pl-3">
-                {line.replace(/^## /, "")}
-              </h2>
-            );
-          }
-          if (line.startsWith("### ")) {
-            return (
-              <h3 key={i} className="text-sm font-semibold text-[#0a3542] mt-4 mb-2">
-                {line.replace(/^### /, "")}
-              </h3>
-            );
-          }
-          if (line.startsWith("- ")) {
-            return (
-              <div key={i} className="flex gap-2 text-sm text-slate-600 mb-1 ml-2">
-                <span className="text-slate-300 mt-0.5">•</span>
-                <span className="whitespace-pre-wrap">{line.replace(/^- /, "")}</span>
-              </div>
-            );
-          }
-          if (/^\d+\.\s/.test(line)) {
-            return (
-              <div key={i} className="text-sm text-slate-600 mb-1 ml-2 whitespace-pre-wrap">
-                {line}
-              </div>
-            );
-          }
-          return (
-            <p key={i} className="text-sm text-slate-600 mb-2 whitespace-pre-wrap">
-              {line}
-            </p>
-          );
-        })}
+      <div className={cn(
+        "pl-4 border-l-4",
+        borderClass,
+        "prose prose-sm max-w-none prose-headings:text-[#0a3542] prose-h1:text-xl prose-h1:font-bold prose-h2:text-base prose-h2:font-semibold prose-h2:border-l-3 prose-h2:border-l-[#00cca2] prose-h2:pl-3 prose-h2:mt-6 prose-h2:mb-3 prose-h3:text-sm prose-h3:font-semibold prose-h3:mt-4 prose-h3:mb-2 prose-p:text-slate-600 prose-p:text-sm prose-li:text-slate-600 prose-li:text-sm prose-table:text-sm prose-th:text-slate-500 prose-th:font-medium prose-td:text-slate-600 prose-strong:text-[#0a3542] prose-strong:font-semibold prose-hr:border-slate-200"
+      )}>
+        <ReactMarkdown>{report.markdown}</ReactMarkdown>
       </div>
     </div>
   );
