@@ -186,8 +186,8 @@ export default function Sidebar({
           <NavItem
             icon={BookOpen}
             label="Learning"
-            href="/coming-soon?title=Learning"
-            active={false}
+            href="/learn"
+            active={pathname.startsWith("/learn")}
             collapsed={collapsed}
           />
           <NavItem

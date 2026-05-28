@@ -10,6 +10,13 @@ import type {
   ScheduleConfig,
 } from "@/types/session";
 import type { PulseReport, ReportStatus } from "@/types/pulse";
+import type {
+  LearningModuleListResponse,
+  LearningModule,
+  TopicContent,
+  TopicMeta,
+  LearningProgressSummary,
+} from "@/types/learning";
 
 const API_BASE = "/api/v1";
 
@@ -245,5 +252,108 @@ export async function updatePulseReportStatus(
     const report = MOCK_PULSE_REPORTS.find((r) => r.id === reportId);
     if (report) report.status = status as ReportStatus;
     return report ?? null;
+  }
+}
+
+// Learning
+export async function fetchLearningModules(): Promise<LearningModuleListResponse> {
+  try {
+    return await apiFetch<LearningModuleListResponse>("/learning/modules");
+  } catch {
+    const { MOCK_LEARNING_MODULES } = await import("@/lib/mock-learning-data");
+    const total = MOCK_LEARNING_MODULES.reduce((s, m) => s + m.topics.length, 0);
+    const done = MOCK_LEARNING_MODULES.reduce(
+      (s, m) => s + m.topics.filter((t) => t.completed).length,
+      0
+    );
+    return {
+      modules: MOCK_LEARNING_MODULES,
+      overall_progress_percent: total ? Math.round((done / total) * 100) : 0,
+    };
+  }
+}
+
+export async function fetchLearningModule(moduleId: string): Promise<LearningModule | null> {
+  try {
+    return await apiFetch<LearningModule>(`/learning/modules/${moduleId}`);
+  } catch {
+    const { MOCK_LEARNING_MODULES } = await import("@/lib/mock-learning-data");
+    return MOCK_LEARNING_MODULES.find((m) => m.id === moduleId) || null;
+  }
+}
+
+export async function fetchTopicContent(
+  moduleId: string,
+  topicId: string
+): Promise<TopicContent | null> {
+  try {
+    return await apiFetch<TopicContent>(`/learning/modules/${moduleId}/topics/${topicId}`);
+  } catch {
+    const { MOCK_LEARNING_MODULES, MOCK_TOPIC_CONTENT } = await import(
+      "@/lib/mock-learning-data"
+    );
+    const mod = MOCK_LEARNING_MODULES.find((m) => m.id === moduleId);
+    const topic = mod?.topics.find((t) => t.id === topicId);
+    if (!mod || !topic) return null;
+    return {
+      topic_id: topic.id,
+      title: topic.title,
+      module_id: mod.id,
+      module_title: mod.title,
+      markdown: MOCK_TOPIC_CONTENT[topic.id] || `# ${topic.title}\n\nContent coming soon.`,
+      completed: topic.completed,
+      estimated_minutes: topic.estimated_minutes,
+    };
+  }
+}
+
+export async function updateTopicProgress(
+  moduleId: string,
+  topicId: string,
+  completed: boolean
+): Promise<TopicMeta | null> {
+  try {
+    return await apiFetch(`/learning/modules/${moduleId}/topics/${topicId}/progress`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completed }),
+    });
+  } catch {
+    const { MOCK_LEARNING_MODULES } = await import("@/lib/mock-learning-data");
+    for (const mod of MOCK_LEARNING_MODULES) {
+      const topic = mod.topics.find((t) => t.id === topicId);
+      if (topic) {
+        topic.completed = completed;
+        return topic;
+      }
+    }
+    return null;
+  }
+}
+
+export async function fetchLearningProgress(): Promise<LearningProgressSummary> {
+  try {
+    return await apiFetch<LearningProgressSummary>("/learning/progress");
+  } catch {
+    const { MOCK_LEARNING_MODULES } = await import("@/lib/mock-learning-data");
+    const total = MOCK_LEARNING_MODULES.reduce((s, m) => s + m.topics.length, 0);
+    const completed = MOCK_LEARNING_MODULES.reduce(
+      (s, m) => s + m.topics.filter((t) => t.completed).length,
+      0
+    );
+    return {
+      total_topics: total,
+      completed_topics: completed,
+      overall_percent: total ? Math.round((completed / total) * 100) : 0,
+      modules: MOCK_LEARNING_MODULES.map((m) => ({
+        module_id: m.id,
+        module_title: m.title,
+        completed: m.topics.filter((t) => t.completed).length,
+        total: m.topics.length,
+        progress_percent: m.topics.length
+          ? Math.round((m.topics.filter((t) => t.completed).length / m.topics.length) * 100)
+          : 0,
+      })),
+    };
   }
 }

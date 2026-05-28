@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @theme {
   --color-navy: #0f172a;
@@ -44,4 +45,36 @@ body {
 }
 .animate-pulse-glow {
   animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+/* Reset typography plugin's pre/code styles to preserve ASCII art rendering */
+.prose pre {
+  padding: 1em;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  white-space: pre;
+  font-size: 0.875em;
+  line-height: 1.5;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.prose pre code {
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+
+.prose :not(pre) > code {
+  color: #0a3542;
+  background: #f1f5f9;
+  padding: 0.125em 0.375em;
+  border-radius: 0.25rem;
+  font-size: 0.75em;
+  font-weight: 600;
 }
