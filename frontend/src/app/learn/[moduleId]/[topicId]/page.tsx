@@ -1,5 +1,6 @@
 "use client";
 
+import LearningChatWidget from "@/components/LearningChatWidget";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -161,6 +162,12 @@ export default function TopicPage() {
       >
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{topic.markdown}</ReactMarkdown>
       </div>
+      <LearningChatWidget
+        moduleId={moduleId}
+        topicId={topicId}
+        topicTitle={topic.title}
+        moduleTitle={topic.module_title}
+      />
     </div>
   );
 }

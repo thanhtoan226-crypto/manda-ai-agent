@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./manda.db"
 
+    # Learning content
+    LEARNING_DATA_DIR: str = str(ROOT_DIR / "backend" / "data" / "learning")
+
     # Redis (for conversation memory)
     REDIS_URL: str = "redis://localhost:6379/0"
 

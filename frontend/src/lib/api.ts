@@ -289,9 +289,7 @@ export async function fetchTopicContent(
   try {
     return await apiFetch<TopicContent>(`/learning/modules/${moduleId}/topics/${topicId}`);
   } catch {
-    const { MOCK_LEARNING_MODULES, MOCK_TOPIC_CONTENT } = await import(
-      "@/lib/mock-learning-data"
-    );
+    const { MOCK_LEARNING_MODULES } = await import("@/lib/mock-learning-data");
     const mod = MOCK_LEARNING_MODULES.find((m) => m.id === moduleId);
     const topic = mod?.topics.find((t) => t.id === topicId);
     if (!mod || !topic) return null;
@@ -300,7 +298,7 @@ export async function fetchTopicContent(
       title: topic.title,
       module_id: mod.id,
       module_title: mod.title,
-      markdown: MOCK_TOPIC_CONTENT[topic.id] || `# ${topic.title}\n\nContent coming soon.`,
+      markdown: `# ${topic.title}\n\nContent requires backend connection.`,
       completed: topic.completed,
       estimated_minutes: topic.estimated_minutes,
     };
@@ -356,4 +354,21 @@ export async function fetchLearningProgress(): Promise<LearningProgressSummary> 
       })),
     };
   }
+}
+
+// Learning Chat
+export async function streamLearningChat(
+  message: string,
+  moduleId?: string,
+  topicId?: string,
+  onChunk?: (data: { type: string; content?: string }) => void
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/learning/chat/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, module_id: moduleId, topic_id: topicId }),
+  });
+  await consumeSSE(res, (data) => {
+    onChunk?.(data as { type: string; content?: string });
+  });
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import LearningChatWidget from "@/components/LearningChatWidget";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -199,6 +200,7 @@ export default function ModulePage() {
           </div>
         ))}
       </div>
+      <LearningChatWidget moduleId={moduleId} moduleTitle={moduleData?.title} />
     </div>
   );
 }

@@ -1,0 +1,79 @@
+{
+  "modules": [
+    {
+      "id": "module-system",
+      "title": "System & Architecture",
+      "description": "Understand how modern web systems are structured and communicate",
+      "icon": "server",
+      "sort_order": 1,
+      "topic_ids": [
+        "topic-frontend-backend-db",
+        "topic-client-server",
+        "topic-monolith-microservice",
+        "topic-api-gateway",
+        "topic-sync-async",
+        "topic-queue-broker"
+      ]
+    },
+    {
+      "id": "module-api",
+      "title": "API",
+      "description": "Learn the language of APIs and integrations",
+      "icon": "plug",
+      "sort_order": 2,
+      "topic_ids": [
+        "topic-rest-api",
+        "topic-endpoint-method",
+        "topic-header-body-param",
+        "topic-json-structure",
+        "topic-webhook-polling",
+        "topic-auth-authz",
+        "topic-token-jwt"
+      ]
+    },
+    {
+      "id": "module-data",
+      "title": "Data & Database Thinking",
+      "description": "Think about data the way engineers do",
+      "icon": "database",
+      "sort_order": 3,
+      "topic_ids": [
+        "topic-table-field-record",
+        "topic-pk-fk",
+        "topic-enum-status",
+        "topic-soft-hard-delete",
+        "topic-data-mapping",
+        "topic-data-validation"
+      ]
+    },
+    {
+      "id": "module-error",
+      "title": "Error & Debug Mindset",
+      "description": "Build your debugging intuition and error literacy",
+      "icon": "bug",
+      "sort_order": 4,
+      "topic_ids": [
+        "topic-status-codes",
+        "topic-logs",
+        "topic-trace-id",
+        "topic-timeout",
+        "topic-retry-logic",
+        "topic-cache"
+      ]
+    },
+    {
+      "id": "module-deploy",
+      "title": "Deployment & Environment",
+      "description": "Understand how code gets from laptop to production",
+      "icon": "rocket",
+      "sort_order": 5,
+      "topic_ids": [
+        "topic-dev-uat-prod",
+        "topic-build-deploy",
+        "topic-versioning",
+        "topic-feature-flag",
+        "topic-rollback"
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from starlette.responses import StreamingResponse
 
 from app.schemas.learning import (
     LearningModuleListResponse,
@@ -7,6 +8,7 @@ from app.schemas.learning import (
     TopicProgressUpdate,
     TopicMeta,
     LearningProgressSummary,
+    LearningChatRequest,
 )
 from app.services.learning_service import LearningService
 
@@ -50,3 +52,12 @@ async def update_progress(module_id: str, topic_id: str, body: TopicProgressUpda
 async def get_progress_summary():
     service = LearningService()
     return await service.get_progress_summary()
+
+
+@router.post("/chat/stream")
+async def stream_learning_chat(request: LearningChatRequest):
+    service = LearningService()
+    return StreamingResponse(
+        service.stream_learning_chat(request),
+        media_type="text/event-stream",
+    )

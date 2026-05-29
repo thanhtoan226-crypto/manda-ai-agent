@@ -54,3 +54,9 @@ class LearningProgressSummary(BaseModel):
     completed_topics: int
     overall_percent: int
     modules: list[ModuleProgress]
+
+
+class LearningChatRequest(BaseModel):
+    message: str
+    module_id: Optional[str] = None
+    topic_id: Optional[str] = None

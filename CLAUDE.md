@@ -50,9 +50,18 @@ backend/app/
   schemas/                # Pydantic request/response models (agent, session, pulse, content)
   services/               # Business logic (LLM-backed with mock fallback)
   services/mock_data.py   # In-memory demo data (AGENTS, AGENT_MODES, etc.) used as fallback
+  services/content_loader.py  # Reads/parses/caches learning MD files from disk
+backend/data/learning/    # Learning content: modules.json + 30 topic MD files with YAML frontmatter
 ```
 
 Services are instantiated per-request. When `LLM_API_KEY` is set, chat and content generation use real LLM calls via Z.AI (OpenAI-compatible). When empty, all responses fall back to mock data from `mock_data.py`. All state is in-memory — no database yet.
+
+### Learning Content Architecture
+- **Source of truth**: MD files in `backend/data/learning/` (one per topic, with YAML frontmatter for metadata)
+- **Module registry**: `backend/data/learning/modules.json` defines module-level metadata and topic ordering
+- **Content loader**: `backend/app/services/content_loader.py` reads/parses/caches MD files using `python-frontmatter`
+- **LLM-generated content**: When a topic has no pre-written MD file, the LLM generates content and `save_topic_content()` persists it to disk
+- **Frontend mock**: Only module metadata kept client-side in `mock-learning-data.ts`; topic content requires backend connection
 
 ### Frontend Structure
 ```
