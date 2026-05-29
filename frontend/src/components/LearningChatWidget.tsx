@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageCircle, X, Send, BookOpen } from "lucide-react";
 import { streamLearningChat } from "@/lib/api";
 import type { ChatMessage } from "@/types/session";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface LearningChatWidgetProps {
   moduleId?: string;
@@ -159,7 +161,13 @@ export default function LearningChatWidget({
                     }`}
                   >
                     {msg.content ? (
-                      <div className="whitespace-pre-wrap">{msg.content}</div>
+                      msg.role === "assistant" ? (
+                        <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:my-1 text-slate-700">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        <div className="whitespace-pre-wrap">{msg.content}</div>
+                      )
                     ) : (
                       <div className="flex items-center gap-1.5 text-slate-400">
                         <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#1ADEB0]" />
