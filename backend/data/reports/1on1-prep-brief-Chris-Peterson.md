@@ -1,4 +1,16 @@
-# 1-on-1 Sample Report: Chris Petersen
+---
+id: pulse-1
+title: "1:1 Prep Brief: Chris Peterson"
+agent_name: "1-on-1 Prep Brief"
+agent_id: agent-1on1
+category: "People & Culture"
+status: focus
+preview: "Exceptional 99.2% response rate, minimal outside-hours impact, and strong speedy meeting adoption — but half his time is in Alignment meetings and meeting load spiked in March."
+created_at: "2026-05-06T14:30:00+10:00"
+updated_at: "2026-05-06T14:30:00+10:00"
+---
+
+# 1:1 Prep Brief: Chris Peterson
 
 Prepared 6 May 2026 - Data from 1 April to 30 April 2026
 Mode: Coaching & Support

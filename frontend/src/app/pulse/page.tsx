@@ -175,7 +175,7 @@ function PulseContent() {
         <>
           <div className="flex flex-col gap-3">
             {paginatedReports.map((report) => (
-              <PulseReportCard key={report.id} report={report} onStatusChange={handleStatusChange} />
+              <PulseReportCard key={report.id} report={report} onStatusChange={handleStatusChange} from="/pulse" />
             ))}
           </div>
 

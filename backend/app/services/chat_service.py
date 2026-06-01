@@ -128,6 +128,30 @@ class ChatService:
             yield f"data: {greeting}\n\n"
             yield f"data: {done}\n\n"
 
+    async def stream_message_for_agent(self, request: ChatRequest):
+        """Stream chat for pulse reports (no session required, uses agent_id)."""
+        conversation_id = request.conversation_id or str(uuid.uuid4())
+
+        if is_llm_configured():
+            full_response = ""
+            async for chunk in self._llm_stream(request):
+                full_response += chunk
+                data = json.dumps({"type": "text", "content": chunk})
+                yield f"data: {data}\n\n"
+        else:
+            mode = request.mode or "coaching"
+            response_text = MOCK_RESPONSES.get(mode, MOCK_RESPONSES["coaching"])
+
+            words = response_text.split(" ")
+            for i, word in enumerate(words):
+                chunk = word if i == 0 else f" {word}"
+                data = json.dumps({"type": "text", "content": chunk})
+                yield f"data: {data}\n\n"
+                await asyncio.sleep(0.03)
+
+        done_data = json.dumps({"type": "done", "conversation_id": conversation_id})
+        yield f"data: {done_data}\n\n"
+
     async def stream_initial_content(self, session_id: str, mode: str):
         """Stream initial content modules when a mode is selected."""
         if session_id in CONTENT_MODULES and CONTENT_MODULES[session_id]:

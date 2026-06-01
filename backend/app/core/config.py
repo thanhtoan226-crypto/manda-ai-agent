@@ -14,10 +14,12 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
 
-    # LLM (Z.AI / OpenAI-compatible)
+    # LLM (OpenRouter / OpenAI-compatible)
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_MODEL: str = "moonshotai/kimi-k2.6:free"
     LLM_API_KEY: str = ""
-    LLM_BASE_URL: str = "https://api.z.ai/api/paas/v4/"
-    LLM_MODEL: str = "glm-5.1"
+    LLM_BASE_URL: str = "https://openrouter.ai/api/v1"
+    LLM_MODEL: str = "moonshotai/kimi-k2.6:free"
     LLM_TIMEOUT: int = 60
     LLM_MAX_TOKENS: int = 4096
 
@@ -26,6 +28,9 @@ class Settings(BaseSettings):
 
     # Learning content
     LEARNING_DATA_DIR: str = str(ROOT_DIR / "backend" / "data" / "learning")
+
+    # Pulse reports
+    REPORTS_DATA_DIR: str = str(ROOT_DIR / "backend" / "data" / "reports")
 
     # Redis (for conversation memory)
     REDIS_URL: str = "redis://localhost:6379/0"

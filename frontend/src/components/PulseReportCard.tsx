@@ -25,9 +25,11 @@ function formatRelativeDate(dateStr: string): string {
 export default function PulseReportCard({
   report,
   onStatusChange,
+  from,
 }: {
   report: PulseReport;
   onStatusChange?: (reportId: string, status: string) => void;
+  from?: string;
 }) {
   const category = report.category as ReportCategory;
   const colorClass = CATEGORY_COLORS[category] || "bg-slate-100 text-slate-700 border-slate-200";
@@ -49,7 +51,7 @@ export default function PulseReportCard({
   };
 
   return (
-    <Link href={`/pulse/${report.id}`} className="block" onClick={handleClick}>
+    <Link href={`/pulse/${report.id}${from ? `?from=${encodeURIComponent(from)}` : ""}`} className="block" onClick={handleClick}>
       <div
         className={cn(
           "bg-white rounded-xl border border-slate-200 border-l-4 px-5 py-4 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer",

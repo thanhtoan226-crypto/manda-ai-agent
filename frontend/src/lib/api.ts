@@ -255,6 +255,48 @@ export async function updatePulseReportStatus(
   }
 }
 
+export async function fetchPulseDrillDown(
+  reportId: string,
+  chipId: string
+): Promise<{ content: string }> {
+  try {
+    return await apiFetch(`/pulse/reports/${reportId}/drill-down?chip_id=${encodeURIComponent(chipId)}`);
+  } catch {
+    const { MOCK_DRILL_DOWN } = await import("@/lib/mock-pulse-data");
+    return { content: MOCK_DRILL_DOWN[chipId] || "No additional detail available for this section." };
+  }
+}
+
+export async function streamPulseChat(
+  reportId: string,
+  message: string,
+  onChunk?: (data: { type: string; content?: string; conversation_id?: string }) => void
+): Promise<void> {
+  try {
+    const res = await fetch(`${API_BASE}/pulse/reports/${reportId}/chat/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
+    await consumeSSE(res, (data) => {
+      onChunk?.(data as { type: string; content?: string; conversation_id?: string });
+    });
+  } catch {
+    // Fallback: simulate a mock response
+    const mockResponse =
+      "Based on the report data, here are some observations:\n\n" +
+      "1. **Meeting patterns show clear trends** that align with the metrics displayed.\n" +
+      "2. **Consider discussing** the areas where performance is below peer median.\n" +
+      "3. **Strengths to maintain** include any metrics where the position is above median.";
+    const words = mockResponse.split(" ");
+    for (let i = 0; i < words.length; i++) {
+      const chunk = i === 0 ? words[i] : ` ${words[i]}`;
+      onChunk?.({ type: "text", content: chunk });
+    }
+    onChunk?.({ type: "done" });
+  }
+}
+
 // Learning
 export async function fetchLearningModules(): Promise<LearningModuleListResponse> {
   try {

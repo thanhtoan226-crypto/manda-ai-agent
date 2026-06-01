@@ -54,7 +54,7 @@ backend/app/
 backend/data/learning/    # Learning content: modules.json + 30 topic MD files with YAML frontmatter
 ```
 
-Services are instantiated per-request. When `LLM_API_KEY` is set, chat and content generation use real LLM calls via Z.AI (OpenAI-compatible). When empty, all responses fall back to mock data from `mock_data.py`. All state is in-memory — no database yet.
+Services are instantiated per-request. When `OPENROUTER_API_KEY` is set, chat and content generation use real LLM calls via OpenRouter (OpenAI-compatible, default model `moonshotai/kimi-k2.6:free`). Falls back to `LLM_API_KEY` if OpenRouter is not configured. When neither is set, all responses fall back to mock data from `mock_data.py`. All state is in-memory — no database yet.
 
 ### Learning Content Architecture
 - **Source of truth**: MD files in `backend/data/learning/` (one per topic, with YAML frontmatter for metadata)
@@ -62,6 +62,16 @@ Services are instantiated per-request. When `LLM_API_KEY` is set, chat and conte
 - **Content loader**: `backend/app/services/content_loader.py` reads/parses/caches MD files using `python-frontmatter`
 - **LLM-generated content**: When a topic has no pre-written MD file, the LLM generates content and `save_topic_content()` persists it to disk
 - **Frontend mock**: Only module metadata kept client-side in `mock-learning-data.ts`; topic content requires backend connection
+
+### Report Data Architecture
+- **Source of truth**: MD files in `backend/data/reports/` (one per report, with YAML frontmatter for metadata)
+- **Report loader**: `backend/app/services/report_loader.py` reads/parses/caches MD files using `python-frontmatter`
+- **Frontmatter fields**: `id`, `title`, `agent_name`, `agent_id`, `category`, `status`, `preview`, `created_at`, `updated_at`
+- **Module enrichment**: `PulseService._enrich_with_modules()` maps `agent_id` → `AGENT_MODULES` from `mock_data.py` to attach structured `ContentModule[]` data to reports at runtime
+- **Markdown body**: Full report content (tables, headings, lists, bullet points)
+- **In-memory status**: `update_report_status()` mutates the cache (not persisted to disk until DB is added)
+- **Frontend mock**: `mock-pulse-data.ts` provides fallback when backend is unavailable, including `MOCK_MODULES_BY_AGENT` and `MOCK_DRILL_DOWN`
+- **Report detail navigation**: Back button is context-aware via `?from=` query param (returns to Browse Agents or Pulse)
 
 ### Frontend Structure
 ```
@@ -71,6 +81,7 @@ frontend/src/
     workbench/page.tsx    # /workbench = three-panel workbench (main feature)
     pulse/                # /pulse = report feed, /[reportId] = report detail
   components/             # All custom, no UI library
+    modules/              # Shared module rendering components (MetricsCardGrid, PulseModuleView, ChatDrawer)
   lib/
     api.ts                # All API calls + SSE helper + mock fallbacks
     utils.ts              # cn() (clsx + tailwind-merge)
@@ -79,7 +90,7 @@ frontend/src/
 ```
 
 ### Key Data Flow
-1. Agent Hub (`/`) → click "Run" → `/workbench?agentId=...`
+1. Agent Hub (`/`) → "Your Pulse" shows recent reports; click agent "Run" → `/workbench?agentId=...`
 2. Workbench: SessionPanel | MainCanvas | ChatPanel
 3. MainCanvas: agent-specific guided conversation → content modules
    - 1-on-1: employee → timeframe → mode → generate
@@ -89,6 +100,7 @@ frontend/src/
 4. Content modules: each module has Data Interpreter + agent-specific insight sections
 5. Each insight item is an individual block with Drill down / Verify / Ask a question + Unpin toggle
 6. Report View: all content minus excluded items
+7. Pulse Report Detail (`/pulse/[reportId]`): when report has `modules`, renders structured layout (MetricsCardGrid for data chips, PulseModuleView for insight chips, ChatDrawer for AI chat); falls back to ReactMarkdown when no modules
 
 ## Conventions
 
@@ -129,7 +141,7 @@ All feature specs are in `docs/features/`:
 - `pulse-agents/team-health-check.md` — Team Health Check flow and report structure
 - `modes.md` — Intent modes per agent with tone/framing guidance
 
-Mock data schemas and sample reports are in `docs/data/`. When `LLM_API_KEY` is configured, these serve as fallback data, not the primary source.
+Mock data schemas are in `docs/data/`. Pulse reports are in `backend/data/reports/` (MD files with YAML frontmatter). When `OPENROUTER_API_KEY` or `LLM_API_KEY` is configured, mock data serves as fallback, not the primary source.
 
 ## Agents
 
@@ -147,9 +159,13 @@ Report categories: People & Culture, Meetings, Wellness, Compliance
 
 ## Current State
 
-- AI responses use real LLM integration (Z.AI via langchain-openai). Set `LLM_API_KEY` in `.env` to enable; falls back to mock data when empty.
+- AI responses use real LLM integration (OpenRouter via langchain-openai). Set `OPENROUTER_API_KEY` in `.env` to enable (model: `moonshotai/kimi-k2.6:free`); falls back to `LLM_API_KEY` if OpenRouter not set; falls back to mock data when neither is set.
+- Pulse reports served from `backend/data/reports/` MD files via `report_loader.py`. Reports with `agent_id` matching an `AGENT_MODULES` key are enriched with structured module data. Frontend falls back to `mock-pulse-data.ts` when backend unavailable.
+- Pulse report detail page renders structured module layout (MetricsCardGrid + PulseModuleView + ChatDrawer) for reports with modules; falls back to ReactMarkdown for reports without.
+- Pulse API endpoints: `GET /reports`, `GET /reports/{id}`, `PUT /reports/{id}/status`, `GET /reports/{id}/drill-down?chip_id=`, `POST /reports/{id}/chat/stream`
+- "Your Pulse" on Browse Agents page shows recent reports (not favorited agents). Back navigation from report detail is context-aware (`?from=` query param).
 - LangGraph agent graph orchestrates content generation: gather_context → generate_module loop with structured output
 - No authentication, no database migrations, no real Google Docs export
 - Backend `models/`, `tools/`, `utils/` directories are empty
 - Test directories exist but have no tests
-- LLM env vars: `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_TIMEOUT`, `LLM_MAX_TOKENS`
+- LLM env vars: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_TIMEOUT`, `LLM_MAX_TOKENS`
