@@ -152,9 +152,13 @@ class ChatService:
         done_data = json.dumps({"type": "done", "conversation_id": conversation_id})
         yield f"data: {done_data}\n\n"
 
-    async def stream_initial_content(self, session_id: str, mode: str):
+    async def stream_initial_content(self, session_id: str, mode: str, subject: str | None = None):
         """Stream initial content modules when a mode is selected."""
-        if session_id in CONTENT_MODULES and CONTENT_MODULES[session_id]:
+        # If we have a subject, always regenerate — pre-populated mock content
+        # won't match the selected subject regardless of LLM configuration
+        if subject:
+            CONTENT_MODULES.pop(session_id, None)
+        elif session_id in CONTENT_MODULES and CONTENT_MODULES[session_id]:
             for module in CONTENT_MODULES[session_id]:
                 data = json.dumps({"type": "module", "module": module})
                 yield f"data: {data}\n\n"
@@ -173,10 +177,15 @@ class ChatService:
             CONTENT_MODULES[session_id] = []
 
         if is_llm_configured():
-            async for event in self._llm_generate_modules(session_id, agent_id, mode):
+            async for event in self._llm_generate_modules(session_id, agent_id, mode, subject):
                 yield event
         else:
             modules_to_use = AGENT_MODULES.get(agent_id, AGENT_MODULES["agent-1on1"])
+            # Personalize mock data with subject name if provided
+            if subject:
+                raw = json.dumps(modules_to_use)
+                raw = raw.replace("Chris Petersen", subject).replace("Chris", subject.split()[0] if subject.split() else subject)
+                modules_to_use = json.loads(raw)
             for module in modules_to_use:
                 CONTENT_MODULES[session_id].append(module)
                 data = json.dumps({"type": "module", "module": module})
@@ -189,6 +198,17 @@ class ChatService:
                 break
 
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+        # Fire-and-forget: generate a full Pulse report and save to disk
+        if is_llm_configured():
+            try:
+                from app.services.report_generator import generate_and_save_report
+
+                asyncio.create_task(
+                    generate_and_save_report(agent_id=agent_id, mode=mode, subject=subject)
+                )
+            except Exception:
+                pass
 
     # --- LLM helpers ---
 
@@ -238,14 +258,16 @@ class ChatService:
             if chunk.content:
                 yield chunk.content
 
-    async def _llm_generate_modules(self, session_id: str, agent_id: str, mode: str):
+    async def _llm_generate_modules(
+        self, session_id: str, agent_id: str, mode: str, subject: str | None = None
+    ):
         """Generate content modules via LLM with structured output. Yields SSE events."""
         llm = get_llm()
         if not llm:
             return
 
         prompt_config = get_prompt(agent_id, mode)
-        context = build_context(agent_id, None, mode)
+        context = build_context(agent_id, subject, mode)
         module_specs = get_module_specs(agent_id)
 
         for spec in module_specs:

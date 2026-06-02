@@ -2,12 +2,16 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 import {
   EyeOff,
   Eye,
   Search,
   Shield,
   HelpCircle,
+  Loader2,
 } from "lucide-react";
 import type { ContentModule } from "@/types/session";
 import MetricsCardGrid from "./MetricsCardGrid";
@@ -15,7 +19,6 @@ import MetricsCardGrid from "./MetricsCardGrid";
 interface AgentConfig {
   tableHeaders: { key: string; label: string }[];
   badgeLabels: { cost: string; alignment: string };
-  verifySource: string;
 }
 
 const PULSE_AGENT_CONFIGS: Record<string, AgentConfig> = {
@@ -28,8 +31,6 @@ const PULSE_AGENT_CONFIGS: Record<string, AgentConfig> = {
       { key: "alignment", label: "Priority" },
     ],
     badgeLabels: { cost: "Cost", alignment: "Priority" },
-    verifySource:
-      "Source: Calendar integration (Outlook + Google Calendar)\n- Period: Last 30 days\n- Confidence: 94%\n- Sample size: 118 meetings analyzed\n- Methodology: Peer comparison against 69 Engineering Managers at REA Group",
   },
   "agent-executive": {
     tableHeaders: [
@@ -40,8 +41,6 @@ const PULSE_AGENT_CONFIGS: Record<string, AgentConfig> = {
       { key: "alignment", label: "Health" },
     ],
     badgeLabels: { cost: "Cost", alignment: "Health" },
-    verifySource:
-      "Source: Organization-wide calendar analytics\n- Period: Last month\n- Confidence: 91%\n- Sample size: 2,847 employees across 7 departments\n- Methodology: Department-level aggregation with per-capita normalization",
   },
   "agent-recurring": {
     tableHeaders: [
@@ -52,8 +51,6 @@ const PULSE_AGENT_CONFIGS: Record<string, AgentConfig> = {
       { key: "alignment", label: "Verdict" },
     ],
     badgeLabels: { cost: "Cost", alignment: "Verdict" },
-    verifySource:
-      "Source: Recurring meeting audit from calendar data\n- Period: Last quarter\n- Confidence: 93%\n- Sample size: 14 recurring meetings analyzed\n- Methodology: Cost modeling with blended rate of $120/hr/attendee",
   },
   "agent-team-health": {
     tableHeaders: [
@@ -64,8 +61,6 @@ const PULSE_AGENT_CONFIGS: Record<string, AgentConfig> = {
       { key: "alignment", label: "Status" },
     ],
     badgeLabels: { cost: "Load", alignment: "Status" },
-    verifySource:
-      "Source: Team meeting health analytics\n- Period: Last month\n- Confidence: 90%\n- Sample size: 12 team members, 286 meetings\n- Methodology: Team-level comparison against org-wide benchmarks",
   },
 };
 
@@ -86,11 +81,14 @@ function PulseItemBlock({
   text,
   chipId,
   chipLabel,
+  itemIndex,
   excluded,
   onToggleUnpin,
   onDrillDown,
+  onVerify,
   loadingItemId,
   drillDownContent,
+  errorItemId,
   onAskQuestion,
   rowData,
   config,
@@ -99,16 +97,20 @@ function PulseItemBlock({
   text: string;
   chipId: string;
   chipLabel: string;
+  itemIndex: number;
   excluded: boolean;
   onToggleUnpin: (itemId: string) => void;
-  onDrillDown: (itemId: string, chipId: string) => void;
+  onDrillDown: (itemId: string, chipId: string, itemIndex: number) => void;
+  onVerify: (itemId: string, chipId: string, itemIndex: number) => void;
   loadingItemId: string | null;
   drillDownContent: Record<string, string>;
+  errorItemId: string | null;
   onAskQuestion: (chipId: string, chipLabel: string, question: string) => void;
   rowData?: Record<string, string>;
   config: AgentConfig;
 }) {
   const isLoading = loadingItemId === itemId;
+  const hasError = errorItemId === itemId;
   const [questionPopupOpen, setQuestionPopupOpen] = useState(false);
   const [questionText, setQuestionText] = useState("");
   const popupRef = useRef<HTMLDivElement>(null);
@@ -174,20 +176,25 @@ function PulseItemBlock({
         </div>
       )}
 
+      {hasError && !drillDownContent[itemId] && (
+        <div className="mt-3 pl-4 border-l-2 border-red-300">
+          <p className="text-sm text-red-500">Unable to load content. Please try again.</p>
+        </div>
+      )}
+
       <div className="flex items-center gap-1 mt-3 pt-2 border-t border-slate-100">
         <button
-          onClick={() => onDrillDown(itemId, chipId)}
+          onClick={() => onDrillDown(itemId, chipId, itemIndex)}
           disabled={isLoading}
           className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 rounded-md transition-colors disabled:opacity-50"
         >
-          <Search size={12} className="text-slate-400" />
+          {isLoading ? <Loader2 size={12} className="text-slate-400 animate-spin" /> : <Search size={12} className="text-slate-400" />}
           Drill down
         </button>
         <button
-          onClick={() => {
-            onDrillDown(itemId, `verify:${chipId}`);
-          }}
-          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 rounded-md transition-colors"
+          onClick={() => onVerify(itemId, chipId, itemIndex)}
+          disabled={isLoading}
+          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 rounded-md transition-colors disabled:opacity-50"
         >
           <Shield size={12} className="text-slate-400" />
           Verify
@@ -260,7 +267,8 @@ interface PulseModuleViewProps {
   agentId: string;
   excludedItemIds: Set<string>;
   onToggleUnpin: (itemId: string) => void;
-  onDrillDown: (chipId: string) => Promise<string>;
+  onDrillDown: (chipId: string, itemIndex: number, onChunk: (content: string) => void) => Promise<void>;
+  onVerify: (chipId: string, itemIndex: number, onChunk: (content: string) => void) => Promise<void>;
   onAskQuestion: (chipId: string, chipLabel: string, question: string) => void;
 }
 
@@ -271,40 +279,66 @@ export default function PulseModuleView({
   excludedItemIds,
   onToggleUnpin,
   onDrillDown,
+  onVerify,
   onAskQuestion,
 }: PulseModuleViewProps) {
   const [drillDownContent, setDrillDownContent] = useState<Record<string, string>>({});
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
+  const [errorItemId, setErrorItemId] = useState<string | null>(null);
 
   const config = PULSE_AGENT_CONFIGS[agentId] || DEFAULT_AGENT_CONFIG;
 
   const handleDrillDown = useCallback(
-    async (itemId: string, chipId: string) => {
-      // Handle verify action
-      if (chipId.startsWith("verify:")) {
-        setDrillDownContent((prev) => ({ ...prev, [itemId]: config.verifySource }));
-        return;
-      }
-
+    async (itemId: string, chipId: string, itemIndex: number) => {
       setLoadingItemId(itemId);
+      setErrorItemId(null);
+      setDrillDownContent((prev) => ({ ...prev, [itemId]: "" }));
       try {
-        const content = await onDrillDown(chipId);
-        setDrillDownContent((prev) => ({ ...prev, [itemId]: content }));
+        await onDrillDown(chipId, itemIndex, (content) => {
+          setDrillDownContent((prev) => ({
+            ...prev,
+            [itemId]: (prev[itemId] || "") + content,
+          }));
+        });
       } catch {
-        setDrillDownContent((prev) => ({ ...prev, [itemId]: "Error loading drill-down content." }));
+        setErrorItemId(itemId);
       } finally {
         setLoadingItemId(null);
       }
     },
-    [onDrillDown, config.verifySource]
+    [onDrillDown]
   );
 
-  const dataChips = module.chips.filter(
-    (chip) => chip.id.endsWith("-data") || chip.id === "chip-data"
+  const handleVerify = useCallback(
+    async (itemId: string, chipId: string, itemIndex: number) => {
+      setLoadingItemId(itemId);
+      setErrorItemId(null);
+      setDrillDownContent((prev) => ({ ...prev, [itemId]: "" }));
+      try {
+        await onVerify(chipId, itemIndex, (content) => {
+          setDrillDownContent((prev) => ({
+            ...prev,
+            [itemId]: (prev[itemId] || "") + content,
+          }));
+        });
+      } catch {
+        setErrorItemId(itemId);
+      } finally {
+        setLoadingItemId(null);
+      }
+    },
+    [onVerify]
   );
-  const insightChips = module.chips.filter(
-    (chip) => !chip.id.endsWith("-data") && chip.id !== "chip-data"
-  );
+
+  const isDataChip = (chip: { id: string }) => {
+    if (chip.id.endsWith("-data") || chip.id === "chip-data") return true;
+    const chipContent = module.content[chip.id];
+    if (chipContent && typeof chipContent === "object" && "metrics" in (chipContent as Record<string, unknown>)) return true;
+    return false;
+  };
+
+  const dataChips = module.chips.filter(isDataChip);
+  const insightChips = module.chips.filter((chip) => !isDataChip(chip));
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-5">
@@ -393,9 +427,9 @@ export default function PulseModuleView({
         // Text only
         if (d.text) {
           return (
-            <p key={chip.id} className="text-sm text-slate-700 whitespace-pre-wrap mb-4">
-              {String(d.text).replace(/\*\*/g, "")}
-            </p>
+            <div key={chip.id} className="prose prose-sm max-w-none prose-p:my-0 prose-p:text-sm prose-p:text-slate-700 prose-p:whitespace-pre-wrap mb-4">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{String(d.text)}</ReactMarkdown>
+            </div>
           );
         }
 
@@ -426,11 +460,14 @@ export default function PulseModuleView({
                       text={item}
                       chipId={chip.id}
                       chipLabel={chip.label}
+                      itemIndex={index}
                       excluded={excludedItemIds.has(itemId)}
                       onToggleUnpin={onToggleUnpin}
                       onDrillDown={handleDrillDown}
+                      onVerify={handleVerify}
                       loadingItemId={loadingItemId}
                       drillDownContent={drillDownContent}
+                      errorItemId={errorItemId}
                       onAskQuestion={onAskQuestion}
                       config={config}
                     />
@@ -450,11 +487,14 @@ export default function PulseModuleView({
                       text={row.meeting}
                       chipId={chip.id}
                       chipLabel={chip.label}
+                      itemIndex={index}
                       excluded={excludedItemIds.has(itemId)}
                       onToggleUnpin={onToggleUnpin}
                       onDrillDown={handleDrillDown}
+                      onVerify={handleVerify}
                       loadingItemId={loadingItemId}
                       drillDownContent={drillDownContent}
+                      errorItemId={errorItemId}
                       onAskQuestion={onAskQuestion}
                       rowData={row}
                       config={config}

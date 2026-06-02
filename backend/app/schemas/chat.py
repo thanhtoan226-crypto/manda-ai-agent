@@ -15,6 +15,8 @@ class ChatRequest(BaseModel):
     agent_id: Optional[str] = None
     session_id: Optional[str] = None
     mode: Optional[str] = None
+    chip_id: Optional[str] = None
+    item_index: Optional[int] = None
 
 
 class ChatResponse(BaseModel):

@@ -85,6 +85,14 @@ Each insight item supports:
 - highlight text within a graph (nodes, labels, or notes) and use an LLM to rewrite it via a contextual pop-up menu.
 All those features use LLM APIs to return response.
 
+### Action Button Grouping Rules
+
+Action buttons (Drill down, Verify, Ask a question) are grouped per insight item. The grouping is determined by how items are formatted in the report Markdown:
+
+- **Rule 1: Numbered items** — If items are numbered (`1.`, `2.`, `3.`...), each number defines one group. All content under that number (title, explanation, conversation starter) shares a single action button group. Example: "Patterns Worth Discussing" uses numbered items — each pattern (title + analysis + "You might ask") is one actionable unit.
+
+- **Rule 2: Hyphenated items** — If there is no numbering and items use hyphens (`-`), each hyphen defines a separate item with its own action button group. Example: "Strengths to Acknowledge" and "Discussion Starters" use hyphens — each bullet point is its own actionable unit.
+
 ## Mock Data
 
 For 1on1-prep-brief, copy data from `1on1-prep-brief-Chris-Peterson.md` to apply for any employee selected in that 1on1-prep-brief report. Remember to change the employee name in the report detail.

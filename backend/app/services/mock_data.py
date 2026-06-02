@@ -819,7 +819,7 @@ PULSE_REPORTS: list[dict] = [
 ]
 
 
-def create_session(agent_id: str, title: Optional[str] = None) -> dict:
+def create_session(agent_id: str, title: Optional[str] = None, subject: Optional[str] = None) -> dict:
     session_id = f"session-{uuid.uuid4().hex[:8]}"
     agent = next((a for a in AGENTS if a["id"] == agent_id), None)
     session_title = title or f"New Session — {agent['name']}" if agent else "New Session"
@@ -831,6 +831,7 @@ def create_session(agent_id: str, title: Optional[str] = None) -> dict:
         "updated_at": datetime.now().isoformat(),
         "preview": "",
         "mode": None,
+        "subject": subject,
     }
     SESSIONS.append(session)
     CONTENT_MODULES[session_id] = []

@@ -86,9 +86,9 @@ export default function AgentCard({ agent, onRun, onSchedule, onToggleFavorite }
   const gradient = CARD_GRADIENTS[gradientIndex];
 
   return (
-    <div className="group flex-shrink-0 w-64 rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-[#0a3542]/20 transition-all bg-white">
+    <div className="group flex-shrink-0 w-64 rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-[#0a3542]/20 transition-all bg-white flex flex-col">
       {/* Gradient header with icon */}
-      <div className={cn("relative h-20 bg-gradient-to-br flex items-center justify-center", gradient)}>
+      <div className={cn("relative h-20 bg-gradient-to-br flex items-center justify-center shrink-0", gradient)}>
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur-sm">
           <Icon size={22} />
         </div>
@@ -109,8 +109,8 @@ export default function AgentCard({ agent, onRun, onSchedule, onToggleFavorite }
         </button>
       </div>
 
-      {/* Content */}
-      <div className="p-4">
+      {/* Content — flex-grow to fill remaining space */}
+      <div className="p-4 flex flex-col flex-1">
         <h3 className="font-semibold text-[#0a3542] text-sm leading-snug mb-0.5">{agent.name}</h3>
         {agent.purpose && <p className="text-xs text-[#0a3542]/50 mb-2">For: {agent.purpose}</p>}
         <p className="text-slate-500 text-xs leading-relaxed mb-3 line-clamp-2">{agent.description}</p>
@@ -145,8 +145,8 @@ export default function AgentCard({ agent, onRun, onSchedule, onToggleFavorite }
           </span>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-2">
+        {/* Actions — pushed to bottom via mt-auto */}
+        <div className="flex gap-2 mt-auto">
           <button
             onClick={() => onRun(agent)}
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#0a3542] text-white rounded-lg text-xs font-semibold hover:bg-[#195160] transition-colors"

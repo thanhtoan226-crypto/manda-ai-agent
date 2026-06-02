@@ -148,10 +148,17 @@ Every individual item block has:
   - All items are included in Report View by default
   - Click eye-off icon → item is excluded from the printable report (block becomes dimmed + strikethrough text)
   - Click eye icon on excluded item → re-include it in the report
-- **Action buttons** (inline at bottom of block):
+- **Action buttons** (inline at bottom of block, grouped by item):
   - **Drill down** → generates 1 deeper level of content below the item. Max 1 drill-down level.
   - **Verify** → generates data-backed evidence for the insight below the item. Dumps raw data.
   - **Ask a question** → opens a question popup (popover above the button). The popup contains:
+
+##### Action Button Grouping Rules
+
+Action buttons (Drill down, Verify, Ask a question) are grouped per insight item. The grouping is determined by how items are formatted in the report Markdown:
+
+- **Rule 1: Numbered items** — If items are numbered (`1.`, `2.`, `3.`...), each number defines one group. All content under that number (title, explanation, conversation starter) shares a single action button group. Example: "Patterns Worth Discussing" uses numbered items — each pattern (title + analysis + "You might ask") is one actionable unit.
+- **Rule 2: Hyphenated items** — If there is no numbering and items use hyphens (`-`), each hyphen defines a separate item with its own action button group. Example: "Strengths to Acknowledge" and "Discussion Starters" use hyphens — each bullet point is its own actionable unit.
     - A textarea for the user to type their question (auto-focused)
     - An "Ask" button (disabled until text is entered) and a "Cancel" button
     - Press Enter to submit, Escape to cancel

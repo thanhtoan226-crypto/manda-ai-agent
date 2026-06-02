@@ -6,6 +6,7 @@ export interface SessionSummary {
   updated_at: string;
   preview: string;
   mode: string | null;
+  subject?: string | null;
 }
 
 export interface SessionListResponse {

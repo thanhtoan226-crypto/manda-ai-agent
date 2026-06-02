@@ -40,8 +40,8 @@ class SessionService:
             messages=messages,
         )
 
-    async def create_session(self, agent_id: str, title: Optional[str] = None) -> SessionDetail:
-        session = _create_session(agent_id, title)
+    async def create_session(self, agent_id: str, title: Optional[str] = None, subject: Optional[str] = None) -> SessionDetail:
+        session = _create_session(agent_id, title, subject)
         return SessionDetail(
             **session,
             modules=[],

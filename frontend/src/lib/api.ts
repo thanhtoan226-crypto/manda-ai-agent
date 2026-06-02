@@ -90,14 +90,14 @@ export async function fetchAgent(agentId: string): Promise<AgentDetailResponse> 
   }
 }
 
-export async function toggleFavorite(agentId: string): Promise<AgentListResponse["agents"][0]> {
+export async function toggleFavorite(agentId: string): Promise<AgentDetailResponse> {
   try {
-    return await apiFetch(`/agents/${agentId}/favorite`, { method: "PUT" });
+    return await apiFetch<AgentDetailResponse>(`/agents/${agentId}/favorite`, { method: "PUT" });
   } catch {
     const { MOCK_AGENTS } = await import("@/lib/mock-agents");
     const agent = MOCK_AGENTS.find((a) => a.id === agentId);
     if (agent) agent.is_favorite = !agent.is_favorite;
-    return agent!;
+    return { agent: agent!, modes: [] };
   }
 }
 
@@ -111,11 +111,15 @@ export async function fetchSession(sessionId: string): Promise<SessionDetail> {
   return apiFetch<SessionDetail>(`/sessions/${sessionId}`);
 }
 
-export async function createSession(agentId: string, title?: string): Promise<SessionDetail> {
+export async function createSession(
+  agentId: string,
+  title?: string,
+  subject?: string
+): Promise<SessionDetail> {
   return apiFetch<SessionDetail>("/sessions/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ agent_id: agentId, title }),
+    body: JSON.stringify({ agent_id: agentId, title, subject }),
   });
 }
 
@@ -199,9 +203,12 @@ export async function streamChat(
 export async function streamContent(
   sessionId: string,
   mode: string,
-  onChunk?: (data: { type: string; module?: unknown }) => void
+  onChunk?: (data: { type: string; module?: unknown }) => void,
+  subject?: string | null
 ): Promise<void> {
-  const res = await fetch(`${API_BASE}/sessions/${sessionId}/content/stream?mode=${mode}`, {
+  const params = new URLSearchParams({ mode });
+  if (subject) params.set("subject", subject);
+  const res = await fetch(`${API_BASE}/sessions/${sessionId}/content/stream?${params}`, {
     method: "POST",
   });
   await consumeSSE(res, (data) => {
@@ -215,86 +222,81 @@ export async function fetchPulseReports(filters?: {
   category?: string;
   time_frame?: string;
 }): Promise<{ reports: PulseReport[]; total: number }> {
-  try {
-    const params = new URLSearchParams();
-    if (filters?.status) params.set("status", filters.status);
-    if (filters?.category) params.set("category", filters.category);
-    if (filters?.time_frame) params.set("time_frame", filters.time_frame);
-    const qs = params.toString() ? `?${params.toString()}` : "";
-    return await apiFetch(`/pulse/reports${qs}`);
-  } catch {
-    const { MOCK_PULSE_REPORTS } = await import("@/lib/mock-pulse-data");
-    return { reports: MOCK_PULSE_REPORTS, total: MOCK_PULSE_REPORTS.length };
-  }
+  const params = new URLSearchParams();
+  if (filters?.status) params.set("status", filters.status);
+  if (filters?.category) params.set("category", filters.category);
+  if (filters?.time_frame) params.set("time_frame", filters.time_frame);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  return apiFetch(`/pulse/reports${qs}`);
 }
 
 export async function fetchPulseReport(reportId: string): Promise<PulseReport | null> {
-  try {
-    return await apiFetch(`/pulse/reports/${reportId}`);
-  } catch {
-    const { MOCK_PULSE_REPORTS } = await import("@/lib/mock-pulse-data");
-    return MOCK_PULSE_REPORTS.find((r) => r.id === reportId) || null;
-  }
+  return apiFetch(`/pulse/reports/${reportId}`);
 }
 
 export async function updatePulseReportStatus(
   reportId: string,
   status: ReportStatus | string
 ): Promise<PulseReport | null> {
-  try {
-    return await apiFetch(`/pulse/reports/${reportId}/status`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-  } catch {
-    const { MOCK_PULSE_REPORTS } = await import("@/lib/mock-pulse-data");
-    const report = MOCK_PULSE_REPORTS.find((r) => r.id === reportId);
-    if (report) report.status = status as ReportStatus;
-    return report ?? null;
-  }
+  return apiFetch(`/pulse/reports/${reportId}/status`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
 }
 
-export async function fetchPulseDrillDown(
+export async function streamPulseDrillDown(
   reportId: string,
-  chipId: string
-): Promise<{ content: string }> {
-  try {
-    return await apiFetch(`/pulse/reports/${reportId}/drill-down?chip_id=${encodeURIComponent(chipId)}`);
-  } catch {
-    const { MOCK_DRILL_DOWN } = await import("@/lib/mock-pulse-data");
-    return { content: MOCK_DRILL_DOWN[chipId] || "No additional detail available for this section." };
-  }
+  chipId: string,
+  itemIndex: number,
+  onChunk?: (data: { type: string; content?: string }) => void
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/pulse/reports/${reportId}/drill-down`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chip_id: chipId, item_index: itemIndex }),
+  });
+  await consumeSSE(res, (data) => {
+    onChunk?.(data as { type: string; content?: string });
+  });
+}
+
+export async function streamPulseVerify(
+  reportId: string,
+  chipId: string,
+  itemIndex: number,
+  onChunk?: (data: { type: string; content?: string }) => void
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/pulse/reports/${reportId}/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chip_id: chipId, item_index: itemIndex }),
+  });
+  await consumeSSE(res, (data) => {
+    onChunk?.(data as { type: string; content?: string });
+  });
 }
 
 export async function streamPulseChat(
   reportId: string,
   message: string,
-  onChunk?: (data: { type: string; content?: string; conversation_id?: string }) => void
+  onChunk?: (data: { type: string; content?: string; conversation_id?: string }) => void,
+  context?: { chip_id?: string; item_index?: number; mode?: string; conversation_id?: string }
 ): Promise<void> {
-  try {
-    const res = await fetch(`${API_BASE}/pulse/reports/${reportId}/chat/stream`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
-    });
-    await consumeSSE(res, (data) => {
-      onChunk?.(data as { type: string; content?: string; conversation_id?: string });
-    });
-  } catch {
-    // Fallback: simulate a mock response
-    const mockResponse =
-      "Based on the report data, here are some observations:\n\n" +
-      "1. **Meeting patterns show clear trends** that align with the metrics displayed.\n" +
-      "2. **Consider discussing** the areas where performance is below peer median.\n" +
-      "3. **Strengths to maintain** include any metrics where the position is above median.";
-    const words = mockResponse.split(" ");
-    for (let i = 0; i < words.length; i++) {
-      const chunk = i === 0 ? words[i] : ` ${words[i]}`;
-      onChunk?.({ type: "text", content: chunk });
-    }
-    onChunk?.({ type: "done" });
-  }
+  const res = await fetch(`${API_BASE}/pulse/reports/${reportId}/chat/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message,
+      chip_id: context?.chip_id,
+      item_index: context?.item_index,
+      mode: context?.mode,
+      conversation_id: context?.conversation_id,
+    }),
+  });
+  await consumeSSE(res, (data) => {
+    onChunk?.(data as { type: string; content?: string; conversation_id?: string });
+  });
 }
 
 // Learning

@@ -22,6 +22,9 @@ import {
   Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 interface MetricData {
   label: string;
@@ -183,9 +186,9 @@ export default function MetricsCardGrid({ metrics, summaryText }: MetricsCardGri
       {/* Title + Summary */}
       <div className="mb-4">
         {summaryText && (
-          <p className="text-sm text-slate-700 mb-3">
-            {summaryText.replace(/\*\*/g, "")}
-          </p>
+          <div className="prose prose-sm max-w-none prose-p:my-0 prose-p:text-sm prose-p:text-slate-700 mb-3">
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{summaryText}</ReactMarkdown>
+          </div>
         )}
       </div>
 

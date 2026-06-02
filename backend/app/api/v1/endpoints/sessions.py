@@ -29,7 +29,7 @@ async def get_session(session_id: str):
 @router.post("/", response_model=SessionDetail)
 async def create_session(request: SessionCreateRequest):
     service = SessionService()
-    return await service.create_session(request.agent_id, request.title)
+    return await service.create_session(request.agent_id, request.title, request.subject)
 
 
 @router.post("/{session_id}/pin")
@@ -57,10 +57,12 @@ async def set_mode(session_id: str, mode: str):
 
 
 @router.post("/{session_id}/content/stream")
-async def stream_initial_content(session_id: str, mode: str = "coaching"):
+async def stream_initial_content(
+    session_id: str, mode: str = "coaching", subject: Optional[str] = None
+):
     service = ChatService()
     return StreamingResponse(
-        service.stream_initial_content(session_id, mode),
+        service.stream_initial_content(session_id, mode, subject),
         media_type="text/event-stream",
     )
 

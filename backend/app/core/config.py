@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # Pulse reports
     REPORTS_DATA_DIR: str = str(ROOT_DIR / "backend" / "data" / "reports")
 
+    # Report templates
+    TEMPLATES_DATA_DIR: str = str(ROOT_DIR / "docs" / "data")
+
     # Redis (for conversation memory)
     REDIS_URL: str = "redis://localhost:6379/0"
 

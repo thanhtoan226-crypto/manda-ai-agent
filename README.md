@@ -32,7 +32,6 @@ Collect data from integrations (Google Calendar, Teams, Outlook) to analyze meet
 |------|-----|
 | Agent definitions & pulse reports | [data/agents.md](data/agents.md) |
 | 1-on-1 sample report | [data/1on1-prep-brief-Chris-Peterson.md](data/1on1-prep-brief-Chris-Peterson.md) |
-| Report MD template | [data/sample-report.md](data/sample-report.md) |
 
 ## Environment Setup
 

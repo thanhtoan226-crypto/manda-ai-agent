@@ -13,10 +13,16 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLORS, CATEGORY_BORDER_COLORS } from "@/lib/mock-pulse-data";
-import { fetchPulseReport, updatePulseReportStatus, fetchPulseDrillDown } from "@/lib/api";
+import {
+  fetchPulseReport,
+  updatePulseReportStatus,
+  streamPulseDrillDown,
+  streamPulseVerify,
+} from "@/lib/api";
 import type { PulseReport, ReportCategory } from "@/types/pulse";
 import type { ChatMessage } from "@/types/session";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import PulseModuleView from "@/components/modules/PulseModuleView";
 import PulseChatDrawer from "@/components/modules/ChatDrawer";
 
@@ -39,6 +45,7 @@ export default function ReportDetailPage() {
 
   const [report, setReport] = useState<PulseReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [excludedItemIds, setExcludedItemIds] = useState<Set<string>>(new Set());
   const [chatOpen, setChatOpen] = useState(false);
@@ -56,7 +63,7 @@ export default function ReportDetailPage() {
           if (data) setReportMarkdown(data.markdown);
         }
       } catch {
-        // fetchPulseReport already falls back to mock
+        if (!cancelled) setError("Unable to load report. Please check your connection and try again.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -98,9 +105,19 @@ export default function ReportDetailPage() {
   }, []);
 
   const handleDrillDown = useCallback(
-    async (chipId: string): Promise<string> => {
-      const result = await fetchPulseDrillDown(reportId, chipId);
-      return result.content;
+    async (chipId: string, itemIndex: number, onChunk: (content: string) => void) => {
+      await streamPulseDrillDown(reportId, chipId, itemIndex, (data) => {
+        if (data.type === "text" && data.content) onChunk(data.content);
+      });
+    },
+    [reportId]
+  );
+
+  const handleVerify = useCallback(
+    async (chipId: string, itemIndex: number, onChunk: (content: string) => void) => {
+      await streamPulseVerify(reportId, chipId, itemIndex, (data) => {
+        if (data.type === "text" && data.content) onChunk(data.content);
+      });
     },
     [reportId]
   );
@@ -129,6 +146,21 @@ export default function ReportDetailPage() {
     return (
       <div className="flex items-center justify-center h-full text-slate-400">
         Loading...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-slate-400">
+        <p className="text-lg font-medium text-[#0a3542]">Something went wrong</p>
+        <p className="text-sm mt-1">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 text-sm bg-[#3b82f6] text-white rounded-lg hover:bg-[#3b82f6]/90"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -307,6 +339,7 @@ export default function ReportDetailPage() {
                   excludedItemIds={excludedItemIds}
                   onToggleUnpin={handleToggleUnpin}
                   onDrillDown={handleDrillDown}
+                  onVerify={handleVerify}
                   onAskQuestion={handleAskQuestion}
                 />
               ))}
@@ -321,7 +354,7 @@ export default function ReportDetailPage() {
               "prose prose-sm max-w-none prose-headings:text-[#0a3542] prose-h1:text-xl prose-h1:font-bold prose-h2:text-base prose-h2:font-semibold prose-h2:border-l-3 prose-h2:border-l-[#00cca2] prose-h2:pl-3 prose-h2:mt-6 prose-h2:mb-3 prose-h3:text-sm prose-h3:font-semibold prose-h3:mt-4 prose-h3:mb-2 prose-p:text-slate-600 prose-p:text-sm prose-li:text-slate-600 prose-li:text-sm prose-table:text-sm prose-th:text-slate-500 prose-th:font-medium prose-td:text-slate-600 prose-strong:text-[#0a3542] prose-strong:font-semibold prose-hr:border-slate-200"
             )}
           >
-            <ReactMarkdown>{report.markdown}</ReactMarkdown>
+            <ReactMarkdown rehypePlugins={[rehypeRaw]}>{report.markdown}</ReactMarkdown>
           </div>
         )}
       </div>

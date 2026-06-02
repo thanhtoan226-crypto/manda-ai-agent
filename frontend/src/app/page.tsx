@@ -49,7 +49,7 @@ export default function AgentHub() {
     try {
       const updated = await toggleFavorite(agentId);
       setAgents((prev) =>
-        prev.map((a) => (a.id === agentId ? { ...a, is_favorite: updated.is_favorite } : a))
+        prev.map((a) => (a.id === agentId ? { ...a, is_favorite: updated.agent.is_favorite } : a))
       );
     } catch (e) {
       console.error(e);

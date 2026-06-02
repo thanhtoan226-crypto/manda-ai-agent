@@ -10,6 +10,7 @@ import { fetchTopicContent, updateTopicProgress } from "@/lib/api";
 import type { TopicContent } from "@/types/learning";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 export default function TopicPage() {
   const params = useParams();
@@ -160,7 +161,7 @@ export default function TopicPage() {
           "[&_blockquote]:bg-blue-50 [&_blockquote]:border-blue-400 [&_blockquote]:text-slate-700 [&_blockquote]:text-sm"
         )}
       >
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{topic.markdown}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{topic.markdown}</ReactMarkdown>
       </div>
       <LearningChatWidget
         moduleId={moduleId}

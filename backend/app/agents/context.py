@@ -36,73 +36,59 @@ def build_context(agent_id: str, subject: str | None, mode: str) -> str:
 
 
 def _get_sample_data_context(agent_id: str, subject: str | None) -> str:
-    """Return sample meeting data context for the LLM. MVP uses mock data."""
+    """Return narrative data context for the LLM to invent realistic numbers."""
     if agent_id == "agent-1on1":
-        return _employee_data_context(subject or "Chris Petersen")
+        return _employee_data_context(subject or "Employee")
     elif agent_id == "agent-executive":
-        return _executive_data_context(subject or "Engineering")
+        return _executive_data_context(subject or "Company-wide")
     elif agent_id == "agent-recurring":
         return _recurring_data_context()
     elif agent_id == "agent-team-health":
-        return _team_health_data_context(subject or "Platform")
+        return _team_health_data_context(subject or "Team")
     return ""
 
 
 def _employee_data_context(employee: str) -> str:
-    return f"""Meeting data for {employee} (last 30 days):
-- Total meeting hours: 62.5 hrs/month (38.5% of working time)
-- Response rate: 99.2% (peer median: 80.2%)
-- Outside-hours meetings: 0.5 hrs
-- Speedy meeting adoption: 37.3% (peer median: 22.7%)
-- Meetings organized: 39% of total
-- Quality score of organized meetings: 65.2%
-- 1:1 cancellation rate: 0%
-- 1:1 reschedule rate: 75%
-- External engagement: 23.7% of meeting time across 16 companies
-- Large meetings (8+ attendees): 37.3% (peer median: 28.3%)
-- March spike: 79.4 hrs (49% of time)
-- Wednesday is heaviest day: 18.3 hrs/month"""
+    return (
+        f"Analyse meeting patterns for {employee}, an Engineering Manager with 5-8 direct "
+        "reports. Invent realistic meeting analytics data covering: total meeting hours per "
+        "month, response rate, outside-hours load, speedy meeting adoption, meeting "
+        "organization rate, quality scores, 1-on-1 coverage and cancellation/reschedule rates, "
+        "external engagement percentage, large meeting percentage, recent monthly trends with "
+        "spikes, and heaviest day of the week. Include peer median comparisons. Ensure all "
+        "numbers are internally consistent across sections — the breakdowns must add up to the "
+        "totals."
+    )
 
 
 def _executive_data_context(scope: str) -> str:
-    return f"""Department meeting analytics for {scope} (last 30 days):
-- Total meeting cost: $2.85M
-- Average meeting hours per employee: 18.4 hrs (org median: 16.2 hrs)
-- Meeting cost growth: +5.1% MoM
-- Quality score: 67.4% (org median: 69.2%)
-- Agenda usage: 58.2% (org median: 61.5%)
-- 1-on-1 coverage: 74.6% (org median: 82.1%)
-- Large meetings (8+ attendees): 28.4%
-- Cross-team alignment meetings: 41% of meeting cost
-- Platform team highest cost center: $890K
-- DevOps after-hours meetings: 3x org average"""
+    return (
+        f"Produce a weekly executive digest for scope '{scope}'. Invent realistic department "
+        "meeting analytics covering: total meeting cost, average meeting hours per employee, "
+        "meeting cost growth rate, quality score, agenda usage, 1-on-1 coverage, large meeting "
+        "percentage, cross-team alignment costs, and top cost centers. Include week-over-week "
+        "comparisons with change percentages. Break down 6-8 departments with varied metrics. "
+        "Ensure all numbers are internally consistent across sections."
+    )
 
 
 def _recurring_data_context() -> str:
-    return """Recurring meeting data (last 90 days):
-- Total recurring meetings: 14
-- Monthly recurring meeting cost: $9,780
-- Total recurring meeting time: 42.5 hrs/month
-- Recurring meeting ratio: 61.2% of calendar (benchmark: 52%)
-- Top cost items:
-  - Weekly Sprint Sync: $7,360/mo
-  - 1-on-1s: $2,880/mo
-  - Tech Debt Review: $3,200/mo
-- Average quality score: 54.8% (peer median: 62.1%)
-- Agenda usage: 42.1% (peer median: 58.3%)
-- 3 meetings with declining attendance (-12% to -18% over 3 months)
-- Best performers: Sprint Planning (78%), Team Retrospective (74%), 1-on-1s (82%)
-- Worst performers: 'Catch-up' (28%), 'Status update' (31%)"""
+    return (
+        "Audit recurring meetings for this user over the past 90 days. Invent realistic data "
+        "covering: total recurring meetings, monthly recurring cost, total recurring time, "
+        "recurring ratio vs benchmark, individual meeting costs with frequency and attendee "
+        "counts, average quality score with peer comparison, agenda usage, attendance trends, "
+        "and verdict recommendations (Keep/Merge/Shorten/Eliminate). Ensure all numbers are "
+        "internally consistent — individual meeting costs must sum to the total."
+    )
 
 
 def _team_health_data_context(team: str) -> str:
-    return f"""Team health data for {team} team (last 30 days):
-- Average meeting hours per member: 24.3 hrs (org median: 18.4 hrs)
-- After-hours meetings: 2.8 hrs/member (org median: 0.9 hrs)
-- 1-on-1 coverage: 68.2% (org median: 82.1%)
-- Meeting quality score: 61.2% (declining 3.8 pts over quarter)
-- Response rate: 88.4% (org median: 81.6%)
-- Cross-team meeting ratio: 45%
-- Back-to-back meeting days: avg 2.3/week per member
-- Collaboration score: 72.1% (org median: 69.8%)
-- Engagement trend: stable for 60% of team, declining for 20%, improving for 20%"""
+    return (
+        f"Perform a team health check for the {team} team. Invent realistic data covering: "
+        "average meeting hours per member, after-hours meetings, 1-on-1 coverage, meeting "
+        "quality score with trend, response rate, cross-team meeting ratio, back-to-back "
+        "frequency, collaboration score, and engagement trends. Include workload distribution "
+        "with top/bottom 5 members, collaboration patterns, and isolation signals. Ensure all "
+        "numbers are internally consistent across sections."
+    )

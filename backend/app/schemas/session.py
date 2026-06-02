@@ -10,6 +10,7 @@ class SessionSummary(BaseModel):
     updated_at: str
     preview: str
     mode: Optional[str] = None
+    subject: Optional[str] = None
 
 
 class SessionListResponse(BaseModel):
@@ -19,6 +20,7 @@ class SessionListResponse(BaseModel):
 class SessionCreateRequest(BaseModel):
     agent_id: str
     title: Optional[str] = None
+    subject: Optional[str] = None
 
 
 class ChipInfo(BaseModel):

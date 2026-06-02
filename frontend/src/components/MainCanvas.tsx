@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import MetricsCardGrid from "@/components/modules/MetricsCardGrid";
 import {
   FileText,
   MessageCircle,
@@ -173,7 +174,7 @@ interface MainCanvasProps {
   mode: string | null;
   modules: ContentModule[];
   excludedItemIds: Set<string>;
-  onSetMode: (mode: string) => void;
+  onSetMode: (mode: string, subject?: string | null) => void;
   onToggleUnpin: (itemId: string) => void;
   onDrillDown: (chipId: string) => Promise<string>;
   reportMarkdown: string;
@@ -357,7 +358,7 @@ function ConversationView({
   mode: string | null;
   modules: ContentModule[];
   excludedItemIds: Set<string>;
-  onSetMode: (mode: string) => void;
+  onSetMode: (mode: string, subject?: string | null) => void;
   onToggleUnpin: (itemId: string) => void;
   loadingItemId: string | null;
   drillDownContent: Record<string, string>;
@@ -389,7 +390,7 @@ function ConversationView({
 
   const handleGenerate = () => {
     if (selectedMode) {
-      onSetMode(selectedMode);
+      onSetMode(selectedMode, selectedSubject);
       setStep("generating");
     }
   };
@@ -424,12 +425,8 @@ function ConversationView({
     return (
       <div className="p-6 space-y-6">
         {modules.map((module) => {
-          const dataChips = module.chips.filter(
-            (chip) => chip.id.endsWith("-data") || chip.id === "chip-data"
-          );
-          const insightChips = module.chips.filter(
-            (chip) => !chip.id.endsWith("-data") && chip.id !== "chip-data"
-          );
+          const dataChips = module.chips.filter((chip) => isDataChip(chip, module.content));
+          const insightChips = module.chips.filter((chip) => !isDataChip(chip, module.content));
 
           return (
             <div key={module.id} className="bg-white rounded-xl border border-slate-200 p-5">
@@ -1038,47 +1035,24 @@ function ItemBlock({
 
 // --- Chip Content ---
 
+function isDataChip(chip: { id: string }, content: Record<string, unknown>): boolean {
+  if (chip.id.endsWith("-data") || chip.id === "chip-data") return true;
+  const chipContent = content[chip.id];
+  if (chipContent && typeof chipContent === "object" && "metrics" in (chipContent as Record<string, unknown>)) return true;
+  return false;
+}
+
 function ChipContent({ data, config }: { data: unknown; config: AgentConfig }) {
   if (!data || typeof data !== "object") return <p className="text-sm text-slate-600">{String(data)}</p>;
 
   const d = data as Record<string, unknown>;
 
   if (d.metrics && Array.isArray(d.metrics)) {
-    const hasPosition = (d.metrics as Array<Record<string, string>>).some((m) => m.position);
     return (
-      <div>
-        {d.text ? (
-          <p className="text-sm text-slate-700 mb-3 whitespace-pre-wrap">
-            {String(d.text as string).replace(/\*\*/g, "")}
-          </p>
-        ) : null}
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200">
-                <th className="text-left py-2 pr-4 text-slate-500 font-medium">Metric</th>
-                <th className="text-right py-2 px-4 text-slate-500 font-medium">Value</th>
-                <th className="text-right py-2 px-4 text-slate-500 font-medium">Peer Median</th>
-                {hasPosition && (
-                  <th className="text-left py-2 pl-4 text-slate-500 font-medium">Position</th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {(d.metrics as Array<Record<string, string>>).map((m, i) => (
-                <tr key={i} className="border-b border-slate-100">
-                  <td className="py-2 pr-4 text-navy">{m.label}</td>
-                  <td className="py-2 px-4 text-right font-medium text-navy">{m.value}</td>
-                  <td className="py-2 px-4 text-right text-slate-400">{m.median}</td>
-                  {hasPosition && (
-                    <td className="py-2 pl-4 text-sm text-slate-500">{m.position || "—"}</td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <MetricsCardGrid
+        metrics={d.metrics as Array<{ label: string; value: string; median?: string; position?: string }>}
+        summaryText={d.text as string | undefined}
+      />
     );
   }
 
@@ -1178,12 +1152,8 @@ function ReportView({
   const reportTitle = markdown.split("\n").find(l => l.startsWith("# "))?.replace(/^#\s*/, "") || "Report";
 
   const renderModuleReport = (module: ContentModule) => {
-    const dataChips = module.chips.filter(
-      (chip) => chip.id.endsWith("-data") || chip.id === "chip-data"
-    );
-    const insightChips = module.chips.filter(
-      (chip) => !chip.id.endsWith("-data") && chip.id !== "chip-data" 
-    );
+    const dataChips = module.chips.filter((chip) => isDataChip(chip, module.content));
+    const insightChips = module.chips.filter((chip) => !isDataChip(chip, module.content));
 
     return (
       <div key={module.id} className="mb-8">

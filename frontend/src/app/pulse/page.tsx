@@ -28,6 +28,7 @@ function PulseContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [reports, setReports] = useState<PulseReport[]>([]);
   const [initialized, setInitialized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadReports = useCallback(async () => {
     try {
@@ -39,8 +40,9 @@ function PulseContent() {
         time_frame: timeFrame,
       });
       setReports((res.reports as PulseReport[]) || []);
+      setError(null);
     } catch {
-      // fetchPulseReports already falls back to mock data
+      setError("Unable to load reports. Please check your connection.");
     } finally {
       setInitialized(true);
     }
@@ -86,6 +88,21 @@ function PulseContent() {
 
   if (!initialized) {
     return <div className="flex items-center justify-center h-full text-slate-400">Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-slate-400">
+        <p className="text-lg font-medium text-[#0a3542]">Something went wrong</p>
+        <p className="text-sm mt-1">{error}</p>
+        <button
+          onClick={loadReports}
+          className="mt-4 px-4 py-2 text-sm bg-[#3b82f6] text-white rounded-lg hover:bg-[#3b82f6]/90"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (

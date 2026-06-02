@@ -399,3 +399,12 @@ export const MOCK_MODULES_BY_AGENT: Record<string, ContentModule[]> = {
   "agent-recurring": MODULES_RECURRING,
   "agent-team-health": MODULES_TEAM_HEALTH,
 };
+
+/** Deep-clone modules and replace the default subject name with a new one. */
+export function personalizeModules(
+  modules: ContentModule[],
+  subject: string
+): ContentModule[] {
+  if (!subject) return modules;
+  return JSON.parse(JSON.stringify(modules).replace(/Chris(?:\s+Petersen)?/g, subject));
+}

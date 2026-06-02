@@ -1,13 +1,24 @@
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from typing import Optional
 
-from app.schemas.pulse import PulseReportListResponse, PulseReportInfo, PulseReportStatusUpdate
+from app.schemas.pulse import (
+    PulseReportListResponse,
+    PulseReportInfo,
+    PulseReportStatusUpdate,
+    GenerateReportRequest,
+)
 from app.schemas.chat import ChatRequest
 from app.services.pulse_service import PulseService
-from app.services.mock_data import DRILL_DOWN_CONTENT
+from app.services.pulse_action_service import PulseActionService
 
 router = APIRouter(tags=["pulse"])
+
+
+class ActionRequest(BaseModel):
+    chip_id: str
+    item_index: int = 0
 
 
 @router.get("/reports", response_model=PulseReportListResponse)
@@ -19,6 +30,34 @@ async def list_reports(
     service = PulseService()
     reports = await service.list_reports(status=status, category=category, time_frame=time_frame)
     return PulseReportListResponse(reports=reports, total=len(reports))
+
+
+@router.post("/reports/generate", response_model=PulseReportInfo)
+async def generate_report(request: GenerateReportRequest):
+    """Generate a new Pulse report via LLM and save it to disk."""
+    from app.services.report_generator import generate_and_save_report
+
+    try:
+        report = await generate_and_save_report(
+            agent_id=request.agent_id,
+            mode=request.mode,
+            subject=request.subject,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        if "429" in str(e):
+            raise HTTPException(status_code=503, detail="Rate limit exceeded. Please try again later.")
+        raise
+
+    if not report:
+        raise HTTPException(status_code=500, detail="Report generation failed")
+
+    service = PulseService()
+    enriched = service._enrich_with_modules(report)
+    return PulseReportInfo(**enriched)
 
 
 @router.get("/reports/{report_id}", response_model=PulseReportInfo)
@@ -39,28 +78,60 @@ async def update_report_status(report_id: str, body: PulseReportStatusUpdate):
     return report
 
 
-@router.get("/reports/{report_id}/drill-down")
-async def drill_down(report_id: str, chip_id: str = Query(...)):
+@router.post("/reports/{report_id}/drill-down")
+async def drill_down(report_id: str, body: ActionRequest):
+    """Stream a drill-down response for a specific insight item."""
     service = PulseService()
     report = await service.get_report(report_id)
-    agent_id = report.agent_id if report else ""
-    key = f"{agent_id}::{chip_id}" if agent_id else chip_id
-    content = DRILL_DOWN_CONTENT.get(key) or DRILL_DOWN_CONTENT.get(chip_id)
-    if not content:
-        return {"content": "No additional detail available for this section."}
-    return {"content": content}
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    action_service = PulseActionService()
+    return StreamingResponse(
+        action_service.stream_drill_down(report, body.chip_id, body.item_index),
+        media_type="text/event-stream",
+    )
+
+
+@router.post("/reports/{report_id}/verify")
+async def verify(report_id: str, body: ActionRequest):
+    """Stream a verification response for a specific insight item."""
+    service = PulseService()
+    report = await service.get_report(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    action_service = PulseActionService()
+    return StreamingResponse(
+        action_service.stream_verify(report, body.chip_id, body.item_index),
+        media_type="text/event-stream",
+    )
 
 
 @router.post("/reports/{report_id}/chat/stream")
 async def pulse_chat_stream(report_id: str, request: ChatRequest):
     service = PulseService()
     report = await service.get_report(report_id)
-    agent_id = report.agent_id if report else "agent-1on1"
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    agent_id = report.agent_id or "agent-1on1"
+
+    # Build enhanced message with chip/item context if provided
+    message = request.message
+    if request.chip_id:
+        action_service = PulseActionService()
+        item_text = action_service.get_item_text(report, request.chip_id, request.item_index or 0)
+        if item_text:
+            message = f"[Context: Discussing insight from '{request.chip_id}' section]\n\n{request.message}\n\nInsight being discussed: {item_text[:300]}"
+
     chat_request = ChatRequest(
-        message=request.message,
+        message=message,
         agent_id=agent_id,
         mode=request.mode or "coaching",
         conversation_id=request.conversation_id,
+        chip_id=request.chip_id,
+        item_index=request.item_index,
     )
     from app.services.chat_service import ChatService
 

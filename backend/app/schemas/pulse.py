@@ -26,3 +26,9 @@ class PulseReportListResponse(BaseModel):
 
 class PulseReportStatusUpdate(BaseModel):
     status: str
+
+
+class GenerateReportRequest(BaseModel):
+    agent_id: str
+    mode: str = "coaching"
+    subject: Optional[str] = None

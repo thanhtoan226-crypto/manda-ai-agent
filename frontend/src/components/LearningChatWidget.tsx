@@ -6,6 +6,7 @@ import { streamLearningChat } from "@/lib/api";
 import type { ChatMessage } from "@/types/session";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 interface LearningChatWidgetProps {
   moduleId?: string;
@@ -163,7 +164,7 @@ export default function LearningChatWidget({
                     {msg.content ? (
                       msg.role === "assistant" ? (
                         <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:my-1 text-slate-700">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{msg.content}</ReactMarkdown>
                         </div>
                       ) : (
                         <div className="whitespace-pre-wrap">{msg.content}</div>

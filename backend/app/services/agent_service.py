@@ -18,9 +18,12 @@ class AgentService:
             modes=[ConversationMode(**m) for m in AGENT_MODES.get(agent_id, [])],
         )
 
-    async def toggle_favorite(self, agent_id: str) -> Optional[AgentInfo]:
+    async def toggle_favorite(self, agent_id: str) -> Optional[AgentDetailResponse]:
         agent = next((a for a in AGENTS if a["id"] == agent_id), None)
         if not agent:
             return None
         agent["is_favorite"] = not agent["is_favorite"]
-        return AgentInfo(**agent)
+        return AgentDetailResponse(
+            agent=AgentInfo(**agent),
+            modes=[ConversationMode(**m) for m in AGENT_MODES.get(agent_id, [])],
+        )

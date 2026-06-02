@@ -17,7 +17,7 @@ import {
   streamChat,
   applyChatToReport,
 } from "@/lib/api";
-import { MOCK_MODULES_BY_AGENT, MOCK_MODULES } from "@/lib/mock-content";
+import { MOCK_MODULES_BY_AGENT, MOCK_MODULES, personalizeModules } from "@/lib/mock-content";
 import type {
   SessionSummary,
   SessionDetail,
@@ -190,7 +190,7 @@ function WorkbenchContent() {
   }, []);
 
   const handleSetMode = useCallback(
-    async (mode: string) => {
+    async (mode: string, subject?: string | null) => {
       const agentModules = MOCK_MODULES_BY_AGENT[agentId] || MOCK_MODULES;
 
       if (useMock) {
@@ -203,7 +203,7 @@ function WorkbenchContent() {
         setModules([]);
         setExcludedItemIds(new Set());
         await new Promise((r) => setTimeout(r, 1500));
-        setModules(agentModules);
+        setModules(subject ? personalizeModules(agentModules, subject) : agentModules);
         return;
       }
 
@@ -220,7 +220,7 @@ function WorkbenchContent() {
           if (chunk.type === "module" && chunk.module) {
             setModules((prev) => [...prev, chunk.module as ContentModule]);
           }
-        });
+        }, subject);
         const detail = await fetchSession(activeSessionId);
         setModules(detail.modules ?? []);
       } catch (e) {
@@ -229,7 +229,7 @@ function WorkbenchContent() {
         setSessions((prev) =>
           prev.map((s) => (s.id === activeSessionId ? { ...s, mode } : s))
         );
-        setModules(agentModules);
+        setModules(subject ? personalizeModules(agentModules, subject) : agentModules);
       }
     },
     [activeSessionId, agentId, useMock]
