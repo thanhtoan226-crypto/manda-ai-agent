@@ -1,4 +1,75 @@
+import random
+
 from app.services.mock_data import AGENTS, AGENT_MODES, AGENT_SUBJECTS
+
+_ROLE_PROFILES = [
+    {
+        "role": "Product Manager with 3-5 direct reports",
+        "focus": "sprint ceremonies, stakeholder alignment, and roadmap reviews",
+    },
+    {
+        "role": "Engineering Manager with 4-6 direct reports",
+        "focus": "technical alignment, code reviews, and architecture decisions",
+    },
+    {
+        "role": "Design Lead with 2-4 direct reports",
+        "focus": "design critiques, user research syncs, and cross-functional alignment",
+    },
+    {
+        "role": "Data Science Manager with 3-5 direct reports",
+        "focus": "model reviews, data pipeline coordination, and insight presentations",
+    },
+    {
+        "role": "Marketing Manager with 5-7 direct reports",
+        "focus": "campaign planning, agency syncs, and performance reviews",
+    },
+    {
+        "role": "Operations Manager with 4-6 direct reports",
+        "focus": "process improvement, vendor management, and cross-team coordination",
+    },
+]
+
+_METRIC_RANGES = {
+    "meeting_hours": [(40, 55), (55, 70), (70, 85)],
+    "response_rate": [(75, 85), (85, 93), (93, 99)],
+    "speedy_adoption": [(15, 25), (25, 40), (40, 55)],
+    "external_pct": [(10, 18), (18, 28), (28, 38)],
+    "after_hours": [(0.5, 3), (3, 8), (8, 15)],
+}
+
+_EXEC_PROFILES = [
+    {"cost_range": "$400K-$550K", "departments": 6, "focus": "cost containment"},
+    {"cost_range": "$550K-$750K", "departments": 7, "focus": "quality improvement"},
+    {"cost_range": "$750K-$950K", "departments": 8, "focus": "coverage gaps"},
+    {"cost_range": "$350K-$500K", "departments": 5, "focus": "meeting overload"},
+]
+
+_RECURRING_PROFILES = [
+    {"meetings": "8-10", "recurring_pct": "45-55%", "focus": "consolidation opportunities"},
+    {"meetings": "11-14", "recurring_pct": "55-65%", "focus": "attendance decline"},
+    {"meetings": "15-20", "recurring_pct": "65-75%", "focus": "cost overrun"},
+    {"meetings": "6-9", "recurring_pct": "35-45%", "focus": "quality degradation"},
+]
+
+_TEAM_PROFILES = [
+    {"size": "8-12", "workload": "evenly distributed", "concern": "burnout risk"},
+    {"size": "15-20", "workload": "top-heavy", "concern": "isolation signals"},
+    {"size": "20-35", "workload": "bimodal split", "concern": "meeting quality decline"},
+    {"size": "35-50", "workload": "clustered around leads", "concern": "1-on-1 coverage gaps"},
+]
+
+_BANNED_PATTERNS = (
+    "Do NOT reproduce these specific patterns from the reference: "
+    "'alignment meeting overload as top category', "
+    "'Wednesday is the heaviest day', "
+    "'vendor relationship burden with Google/Atlassian/Searce', "
+    "'March spike followed by April recovery', "
+    "'99%+ response rate as top strength', "
+    "'speedy adoption above peer median as the standout', "
+    "'Due Diligence standup with 33+ people', "
+    "'ETech Wednesday Update with 42 people', "
+    "'Searce offshore coordination driving after-hours load'."
+)
 
 
 def build_context(agent_id: str, subject: str | None, mode: str) -> str:
@@ -49,46 +120,86 @@ def _get_sample_data_context(agent_id: str, subject: str | None) -> str:
 
 
 def _employee_data_context(employee: str) -> str:
+    profile = random.choice(_ROLE_PROFILES)
+    hours = random.choice(_METRIC_RANGES["meeting_hours"])
+    resp = random.choice(_METRIC_RANGES["response_rate"])
+    speedy = random.choice(_METRIC_RANGES["speedy_adoption"])
+    external = random.choice(_METRIC_RANGES["external_pct"])
+    after_hrs = random.choice(_METRIC_RANGES["after_hours"])
+    top_cat = random.choice(["Decision Making", "Planning", "Supporting Individuals", "Alignment"])
+
     return (
-        f"Analyse meeting patterns for {employee}, an Engineering Manager with 5-8 direct "
-        "reports. Invent realistic meeting analytics data covering: total meeting hours per "
-        "month, response rate, outside-hours load, speedy meeting adoption, meeting "
-        "organization rate, quality scores, 1-on-1 coverage and cancellation/reschedule rates, "
-        "external engagement percentage, large meeting percentage, recent monthly trends with "
-        "spikes, and heaviest day of the week. Include peer median comparisons. Ensure all "
-        "numbers are internally consistent across sections — the breakdowns must add up to the "
-        "totals."
+        f"Analyse meeting patterns for {employee}, a {profile['role']}. "
+        f"Their primary meeting focus areas are {profile['focus']}. "
+        f"Generate data with these constraints: monthly meeting hours in the {hours[0]}-{hours[1]} range, "
+        f"response rate {resp[0]}-{resp[1]}%, speedy meeting adoption {speedy[0]}-{speedy[1]}%, "
+        f"external meeting percentage {external[0]}-{external[1]}%, "
+        f"after-hours meetings {after_hrs[0]}-{after_hrs[1]} hours, "
+        f"top meeting category is {top_cat}. "
+        f"Include peer median comparisons. Ensure all numbers are internally consistent across "
+        f"sections — the breakdowns must add up to the totals. {_BANNED_PATTERNS}"
     )
 
 
 def _executive_data_context(scope: str) -> str:
+    profile = random.choice(_EXEC_PROFILES)
+    growth_dir = random.choice(["accelerating", "decelerating", "stable", "volatile"])
+    standout_metric = random.choice([
+        "after-hours surge", "quality score decline", "large meeting creep",
+        "cross-team cost imbalance", "agenda usage drop",
+    ])
+
     return (
-        f"Produce a weekly executive digest for scope '{scope}'. Invent realistic department "
-        "meeting analytics covering: total meeting cost, average meeting hours per employee, "
-        "meeting cost growth rate, quality score, agenda usage, 1-on-1 coverage, large meeting "
-        "percentage, cross-team alignment costs, and top cost centers. Include week-over-week "
-        "comparisons with change percentages. Break down 6-8 departments with varied metrics. "
-        "Ensure all numbers are internally consistent across sections."
+        f"Produce a weekly executive digest for scope '{scope}'. "
+        f"Generate data with these constraints: total weekly meeting cost in the {profile['cost_range']} range, "
+        f"break down {profile['departments']} departments with varied metrics, "
+        f"meeting growth trend is {growth_dir}, "
+        f"the key signal to highlight is {standout_metric}. "
+        f"Include week-over-week comparisons with change percentages. "
+        f"Ensure all numbers are internally consistent across sections. {_BANNED_PATTERNS}"
     )
 
 
 def _recurring_data_context() -> str:
+    profile = random.choice(_RECURRING_PROFILES)
+    quality = random.choice([
+        ("45-55%", "below peer median"),
+        ("55-65%", "near peer median"),
+        ("65-75%", "above peer median"),
+    ])
+    verdict_mix = random.choice([
+        "majority Keep with few Optimise actions",
+        "balanced mix of Keep, Merge, and Eliminate",
+        "several Eliminate and Shorten candidates",
+    ])
+
     return (
-        "Audit recurring meetings for this user over the past 90 days. Invent realistic data "
-        "covering: total recurring meetings, monthly recurring cost, total recurring time, "
-        "recurring ratio vs benchmark, individual meeting costs with frequency and attendee "
-        "counts, average quality score with peer comparison, agenda usage, attendance trends, "
-        "and verdict recommendations (Keep/Merge/Shorten/Eliminate). Ensure all numbers are "
-        "internally consistent — individual meeting costs must sum to the total."
+        f"Audit recurring meetings for this user over the past 90 days. "
+        f"Generate data with these constraints: total recurring meetings in the {profile['meetings']} range, "
+        f"recurring ratio {profile['recurring_pct']} of calendar, "
+        f"primary audit focus is {profile['focus']}, "
+        f"average quality score {quality[0]} ({quality[1]}), "
+        f"verdict distribution should show {verdict_mix}. "
+        f"Ensure all numbers are internally consistent — individual meeting costs must sum to the total. "
+        f"{_BANNED_PATTERNS}"
     )
 
 
 def _team_health_data_context(team: str) -> str:
+    profile = random.choice(_TEAM_PROFILES)
+    avg_hrs = random.choice(["16-22 hrs", "22-28 hrs", "28-35 hrs"])
+    after_hrs = random.choice(["moderate (20-35 hrs team total)", "elevated (35-55 hrs team total)", "high (55-70 hrs team total)"])
+    collab = random.choice(["strong technical collaboration", "healthy cross-team engagement", "emerging silo risks"])
+
     return (
-        f"Perform a team health check for the {team} team. Invent realistic data covering: "
-        "average meeting hours per member, after-hours meetings, 1-on-1 coverage, meeting "
-        "quality score with trend, response rate, cross-team meeting ratio, back-to-back "
-        "frequency, collaboration score, and engagement trends. Include workload distribution "
-        "with top/bottom 5 members, collaboration patterns, and isolation signals. Ensure all "
-        "numbers are internally consistent across sections."
+        f"Perform a team health check for the {team} team. "
+        f"Generate data with these constraints: team size {profile['size']} members, "
+        f"workload pattern is {profile['workload']}, "
+        f"primary health concern is {profile['concern']}, "
+        f"average meeting hours per member {avg_hrs}, "
+        f"after-hours meeting load is {after_hrs}, "
+        f"collaboration culture shows {collab}. "
+        f"Include workload distribution with top/bottom members, collaboration patterns, "
+        f"and isolation signals. Ensure all numbers are internally consistent across sections. "
+        f"{_BANNED_PATTERNS}"
     )

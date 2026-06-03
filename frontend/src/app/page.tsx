@@ -29,9 +29,25 @@ export default function AgentHub() {
         const sorted = (res.reports as PulseReport[]).sort(
           (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
         );
-        setRecentReports(sorted.slice(0, 10));
+        setRecentReports(sorted.slice(0, 8));
       })
       .catch(console.error);
+  }, []);
+
+  // Refetch reports when tab regains focus so newly generated reports appear
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchPulseReports()
+        .then((res) => {
+          const sorted = (res.reports as PulseReport[]).sort(
+            (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+          );
+          setRecentReports(sorted.slice(0, 8));
+        })
+        .catch(console.error);
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, []);
 
   const handleRun = useCallback(
@@ -101,7 +117,7 @@ export default function AgentHub() {
             <div className="flex items-center gap-2">
               <Activity size={14} className="text-[#3b82f6]" />
               <h2 className="text-sm font-semibold text-[#0a3542] uppercase tracking-wide">
-                Your Pulse
+                Your Recent Pulse
               </h2>
             </div>
             <div className="flex gap-1">
@@ -172,7 +188,7 @@ export default function AgentHub() {
       <ScheduleModal
         open={!!scheduleAgent}
         onClose={() => setScheduleAgent(null)}
-        sessionId=""
+        sessionId={scheduleAgent?.id ?? ""}
       />
     </div>
   );

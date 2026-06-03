@@ -12,7 +12,7 @@ from app.core.llm import get_llm
 from app.services.md_parser import parse_report_modules
 from app.services.mock_data import AGENTS
 from app.services.report_loader import is_protected_report, save_report
-from app.services.template_loader import get_template, get_template_body
+from app.services.template_loader import get_template, get_template_body_sanitized
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ async def generate_report_md(agent_id: str, mode: str, subject: str | None = Non
 
     Returns the markdown body (no frontmatter).
     """
-    template_body = get_template_body(agent_id)
+    template_body = get_template_body_sanitized(agent_id)
     template_full = get_template(agent_id)
     prompt_config = get_prompt(agent_id, mode)
     context = build_context(agent_id, subject, mode)
@@ -75,6 +75,16 @@ COMPLETELY DIFFERENT report with:
 - DIFFERENT names, meeting titles, and examples: invent realistic but different specifics.
 - DIFFERENT numbers: all metrics, costs, percentages, and counts must differ from the template.
 - Ensure all numbers are internally consistent across sections — breakdowns must add up to totals.
+- BANNED patterns from the template — do NOT reproduce these even with different numbers:
+  * "Alignment meeting overload" as the dominant category — use a different category dominance
+  * "Wednesday is the heaviest day" — use a different day-of-week clustering
+  * "Vendor relationship burden" — use different external engagement patterns
+  * "Spike in [month] followed by recovery" — use a different trend shape
+  * "99%+ response rate as top strength" — choose a different standout metric
+  * "Speedy adoption above peer median" — vary which metric stands out
+  * Specific names from the template (Chris, Mart, Damien, Jessie, Johnny, etc.) — invent entirely different names
+  * Specific meeting names from the template — invent entirely different meeting names
+  * Specific vendor names from the template — invent entirely different vendor names
 
 Structural rules (follow these exactly):
 - Use the same ## section headings as the template
@@ -85,7 +95,7 @@ Structural rules (follow these exactly):
 - Include "LLM Feedback" paragraphs where the template has them
 - End with a "## Context and Trends" section with bold labels
 
-REFERENCE TEMPLATE:
+STRUCTURAL SKELETON (all data is placeholder):
 ---
 {template_body}
 ---
@@ -106,7 +116,7 @@ line — start with the subtitle line like "Prepared ...")."""
 
     messages = [
         SystemMessage(content=system_prompt),
-        HumanMessage(content=f"Generate a {agent_name} report in {prompt_config.tone} tone for {mode} mode."),
+        HumanMessage(content=f"Generate a {agent_name} report in {prompt_config.tone} tone for {mode} mode. Generation ID: {uuid.uuid4().hex[:8]}. Produce entirely original content — do not reproduce patterns from any previous report."),
     ]
 
     # Retry up to 3 times on rate limit errors

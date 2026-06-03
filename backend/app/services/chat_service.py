@@ -1,6 +1,7 @@
 import uuid
 import json
 import asyncio
+import logging
 from datetime import datetime
 
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
@@ -32,6 +33,16 @@ APPLY_RESPONSES = {
 }
 
 _HISTORY_LIMIT = 10
+
+logger = logging.getLogger(__name__)
+
+_ANTI_ANCHORING = (
+    "CRITICAL — Generate ORIGINAL data. Do NOT reproduce these patterns: "
+    "'99.2% response rate', '62.5 hrs monthly', 'Alignment at 49.9%', "
+    "'Wednesday heaviest day', 'Google/Atlassian/Searce vendor relationships', "
+    "'March spike then recovery', 'Due Diligence standup', 'ETech Wednesday Update'. "
+    "Invent completely different metrics, meeting names, vendor names, and narrative arcs."
+)
 
 
 class ChatService:
@@ -184,7 +195,24 @@ class ChatService:
             # Personalize mock data with subject name if provided
             if subject:
                 raw = json.dumps(modules_to_use)
-                raw = raw.replace("Chris Petersen", subject).replace("Chris", subject.split()[0] if subject.split() else subject)
+                raw = raw.replace("Chris Petersen", subject).replace(
+                    "Chris", subject.split()[0] if subject.split() else subject
+                )
+                # Replace Chris-specific metric anchors with generic values
+                raw = raw.replace("99.2%", "87.4%").replace("62.5", "54.8")
+                raw = raw.replace("49.9%", "42.3%").replace("37.3%", "31.6%")
+                raw = raw.replace("79.4", "68.2").replace("52.7", "48.3")
+                raw = raw.replace("38.5%", "33.2%").replace("23.7%", "18.4%")
+                raw = raw.replace("Google", "CloudCo").replace("Atlassian", "TechPartners")
+                raw = raw.replace("Searce", "OffshoreDev").replace("AvePoint", "DataSys")
+                raw = raw.replace("Due Diligence stakeholder stand up", "Strategy Review")
+                raw = raw.replace("Due Diligence", "Strategy Review")
+                raw = raw.replace("ETech Weekly Wednesday Update", "Platform Weekly Sync")
+                raw = raw.replace("ETech", "Platform")
+                raw = raw.replace("SETI JPD refinement", "Product Roadmap Review")
+                raw = raw.replace("SETI JPD", "Product Roadmap")
+                raw = raw.replace("Apps Team Standup", "Team Standup")
+                raw = raw.replace("REA Group", "Acme Corp")
                 modules_to_use = json.loads(raw)
             for module in modules_to_use:
                 CONTENT_MODULES[session_id].append(module)
@@ -204,11 +232,19 @@ class ChatService:
             try:
                 from app.services.report_generator import generate_and_save_report
 
-                asyncio.create_task(
+                task = asyncio.create_task(
                     generate_and_save_report(agent_id=agent_id, mode=mode, subject=subject)
                 )
+
+                def _handle_task_result(t: asyncio.Task) -> None:
+                    if t.cancelled():
+                        return
+                    if t.exception():
+                        logger.error("Background report generation failed: %s", t.exception())
+
+                task.add_done_callback(_handle_task_result)
             except Exception:
-                pass
+                logger.exception("Failed to start background report generation")
 
     # --- LLM helpers ---
 
@@ -249,8 +285,8 @@ class ChatService:
         if not llm:
             mode = request.mode or "coaching"
             text = MOCK_RESPONSES.get(mode, MOCK_RESPONSES["coaching"])
-            for word in text.split(" "):
-                yield word if text.index(word) == 0 else f" {word}"
+            for i, word in enumerate(text.split(" ")):
+                yield word if i == 0 else f" {word}"
             return
 
         messages = self._build_messages(request)
@@ -261,7 +297,7 @@ class ChatService:
     async def _llm_generate_modules(
         self, session_id: str, agent_id: str, mode: str, subject: str | None = None
     ):
-        """Generate content modules via LLM with structured output. Yields SSE events."""
+        """Generate content modules via LLM. Yields SSE events."""
         llm = get_llm()
         if not llm:
             return
@@ -272,39 +308,83 @@ class ChatService:
 
         for spec in module_specs:
             chip_descriptions = ", ".join(f'"{c.label}" (id: {c.id})' for c in spec.chips)
+            chip_ids = [c.id for c in spec.chips]
 
             content_prompt = f"""{prompt_config.system_prompt}
 
 {context}
 
+{_ANTI_ANCHORING}
+
 Generate a content module titled "{spec.title}" with these chip sections: {chip_descriptions}.
 
 {prompt_config.content_instructions}
 
-The module must have:
-- id: "{spec.id}"
-- title: "{spec.title}"
-- chips: a list of objects with id and label matching the chip sections above
-- content: a dict keyed by chip id where:
-  - Data Interpreter chips contain: {{"metrics": [{{"label": str, "value": str, "median": str, "position": "above"|"below"|"at"}}], "text": str}}
-  - Insight chips contain: {{"items": [str]}}
-  - Table chips contain: {{"headers": [{{"key": str, "label": str}}], "table": [dict]}}
-  - Mixed chips contain: {{"items": [str], "text": str}}
+The module must be a JSON object with this exact structure:
+{{
+  "id": "{spec.id}",
+  "title": "{spec.title}",
+  "chips": [{", ".join(f'{{"id": "{c.id}", "label": "{c.label}"}}' for c in spec.chips)}],
+  "content": {{
+    {chr(10)    + "    ".join(f'"{c.id}": <content for {c.label}>,' for c in spec.chips)}
+  }}
+}}
 
-Respond with a single JSON object matching this schema."""
+Content types by chip:
+- Data Interpreter chips: {{"metrics": [{{"label": str, "value": str, "median": str, "position": "above"|"below"|"at"}}], "text": str}}
+- Insight chips: {{"items": [str]}}
+- Table chips: {{"headers": [{{"key": str, "label": str}}], "table": [dict]}}
+- Mixed chips: {{"items": [str], "text": str}}
+
+Respond with ONLY the JSON object, no markdown fences, no explanation."""
 
             try:
-                structured_llm = llm.with_structured_output(LLMContentModule)
                 messages = [
                     SystemMessage(content=content_prompt),
                     HumanMessage(
                         content=f'Generate the "{spec.title}" module in {prompt_config.tone} tone for {mode} mode.'
                     ),
                 ]
-                result = await structured_llm.ainvoke(messages)
-                module_dict = result.model_dump()
+                # Retry up to 3 times on rate limit errors with longer backoff
+                raw = None
+                for attempt in range(3):
+                    try:
+                        result = await llm.ainvoke(messages)
+                        raw = result.content if isinstance(result.content, str) else str(result.content)
+                        break
+                    except Exception as e:
+                        if "429" in str(e) and attempt < 2:
+                            wait = 3 ** (attempt + 1)  # 3s, 9s
+                            logger.warning("Rate limited, retrying in %ds for %s", wait, spec.id)
+                            await asyncio.sleep(wait)
+                        else:
+                            raise
+
+                if raw is None:
+                    raise RuntimeError("LLM returned no content")
+
+                # Strip markdown fences if present
+                raw = raw.strip()
+                if raw.startswith("```"):
+                    _, _, raw = raw.partition("\n")
+                if raw.endswith("```"):
+                    raw = raw[:-3]
+                raw = raw.strip()
+
+                module_dict = json.loads(raw)
                 module_dict.setdefault("id", spec.id)
                 module_dict.setdefault("title", spec.title)
+
+                # Ensure chips match spec
+                if not module_dict.get("chips"):
+                    module_dict["chips"] = [{"id": c.id, "label": c.label} for c in spec.chips]
+
+                # Ensure content has entries for all chips
+                content = module_dict.get("content", {})
+                for chip_id in chip_ids:
+                    if chip_id not in content:
+                        content[chip_id] = {"items": []}
+                module_dict["content"] = content
 
                 # Ensure chips have enabled field
                 for chip in module_dict.get("chips", []):
@@ -313,11 +393,35 @@ Respond with a single JSON object matching this schema."""
                 CONTENT_MODULES[session_id].append(module_dict)
                 data = json.dumps({"type": "module", "module": module_dict})
                 yield f"data: {data}\n\n"
-            except Exception:
+            except Exception as e:
                 # Fallback: use mock module for this spec
+                logger.warning("LLM module generation failed for %s/%s: %s", agent_id, spec.id, e)
                 mock_modules = AGENT_MODULES.get(agent_id, AGENT_MODULES["agent-1on1"])
                 mock_module = next((m for m in mock_modules if m["id"] == spec.id), None)
                 if mock_module:
-                    CONTENT_MODULES[session_id].append(mock_module)
-                    data = json.dumps({"type": "module", "module": mock_module})
+                    # Personalize mock data with subject name and de-anchor from Chris
+                    module_copy = json.loads(json.dumps(mock_module))
+                    raw_m = json.dumps(module_copy)
+                    if subject:
+                        raw_m = raw_m.replace("Chris Petersen", subject).replace(
+                            "Chris", subject.split()[0] if subject.split() else subject
+                        )
+                    # Replace Chris-specific metric anchors with generic values
+                    raw_m = raw_m.replace("99.2%", "87.4%").replace("62.5", "54.8")
+                    raw_m = raw_m.replace("49.9%", "42.3%").replace("37.3%", "31.6%")
+                    raw_m = raw_m.replace("79.4", "68.2").replace("52.7", "48.3")
+                    raw_m = raw_m.replace("38.5%", "33.2%").replace("23.7%", "18.4%")
+                    raw_m = raw_m.replace("Google", "CloudCo").replace("Atlassian", "TechPartners")
+                    raw_m = raw_m.replace("Searce", "OffshoreDev").replace("AvePoint", "DataSys")
+                    raw_m = raw_m.replace("Due Diligence stakeholder stand up", "Strategy Review")
+                    raw_m = raw_m.replace("Due Diligence", "Strategy Review")
+                    raw_m = raw_m.replace("ETech Weekly Wednesday Update", "Platform Weekly Sync")
+                    raw_m = raw_m.replace("ETech", "Platform")
+                    raw_m = raw_m.replace("SETI JPD refinement", "Product Roadmap Review")
+                    raw_m = raw_m.replace("SETI JPD", "Product Roadmap")
+                    raw_m = raw_m.replace("Apps Team Standup", "Team Standup")
+                    raw_m = raw_m.replace("REA Group", "Acme Corp")
+                    module_copy = json.loads(raw_m)
+                    CONTENT_MODULES[session_id].append(module_copy)
+                    data = json.dumps({"type": "module", "module": module_copy})
                     yield f"data: {data}\n\n"

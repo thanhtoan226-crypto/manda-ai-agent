@@ -22,7 +22,10 @@ const API_BASE = "/api/v1";
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, options);
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`API error: ${res.status}${body ? ` — ${body}` : ""}`);
+  }
   return res.json();
 }
 

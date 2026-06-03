@@ -80,8 +80,18 @@ def get_report(report_id: str) -> Optional[dict]:
 def update_report_status(report_id: str, status: str) -> Optional[dict]:
     cache = _load_reports()
     report = cache.get(report_id)
-    if report:
-        report["status"] = status
+    if not report:
+        return None
+    report["status"] = status
+
+    for filepath in DATA_DIR.glob("*.md"):
+        post = frontmatter.load(filepath)
+        if post.get("id", filepath.stem) == report_id:
+            post["status"] = status
+            post["updated_at"] = datetime.now(timezone.utc).isoformat()
+            filepath.write_text(frontmatter.dumps(post), encoding="utf-8")
+            break
+
     return report
 
 

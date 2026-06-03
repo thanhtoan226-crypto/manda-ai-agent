@@ -1,4 +1,5 @@
 import json
+import uuid
 from typing import Optional
 
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -51,7 +52,7 @@ class SessionService:
     async def pin_item(self, session_id: str, request: PinRequest) -> Optional[PinnedItem]:
         if session_id not in PINNED_ITEMS:
             PINNED_ITEMS[session_id] = []
-        pin_id = f"pin-{len(PINNED_ITEMS[session_id]) + 1}"
+        pin_id = f"pin-{uuid.uuid4().hex[:8]}"
         item = PinnedItem(
             id=pin_id,
             module_id=request.module_id,

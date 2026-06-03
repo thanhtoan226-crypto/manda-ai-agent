@@ -822,7 +822,7 @@ PULSE_REPORTS: list[dict] = [
 def create_session(agent_id: str, title: Optional[str] = None, subject: Optional[str] = None) -> dict:
     session_id = f"session-{uuid.uuid4().hex[:8]}"
     agent = next((a for a in AGENTS if a["id"] == agent_id), None)
-    session_title = title or f"New Session — {agent['name']}" if agent else "New Session"
+    session_title = (title or f"New Session — {agent['name']}") if agent else (title or "New Session")
     session = {
         "id": session_id,
         "agent_id": agent_id,
