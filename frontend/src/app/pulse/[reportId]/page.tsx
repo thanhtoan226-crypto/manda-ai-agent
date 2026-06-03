@@ -12,10 +12,11 @@ import {
   FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CATEGORY_COLORS, CATEGORY_BORDER_COLORS } from "@/lib/mock-pulse-data";
+import { CATEGORY_COLORS, CATEGORY_BORDER_COLORS } from "@/lib/constants";
 import {
   fetchPulseReport,
   updatePulseReportStatus,
+  updatePulseReportMarkdown,
   streamPulseDrillDown,
   streamPulseVerify,
 } from "@/lib/api";
@@ -75,14 +76,20 @@ export default function ReportDetailPage() {
 
   useEffect(() => {
     if (report && report.status === "unread") {
-      updatePulseReportStatus(report.id, "read").catch(() => {});
+      updatePulseReportStatus(report.id, "read").catch(() => {
+        setToast("Failed to mark as read");
+        setTimeout(() => setToast(null), 3000);
+      });
       setReport((prev) => (prev ? { ...prev, status: "read" } : prev));
     }
   }, [report?.id, report?.status]);
 
   const handleStatusChange = (status: string) => {
     if (!report) return;
-    updatePulseReportStatus(report.id, status).catch(() => {});
+    updatePulseReportStatus(report.id, status).catch(() => {
+      setToast("Failed to update status");
+      setTimeout(() => setToast(null), 3000);
+    });
     setReport((prev) =>
       prev ? { ...prev, status: status as PulseReport["status"] } : prev
     );
@@ -92,7 +99,8 @@ export default function ReportDetailPage() {
       read: "Marked as read",
     };
     setToast(labels[status] || "Status updated");
-    setTimeout(() => setToast(null), 3000);
+    const timer = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(timer);
   };
 
   const handleToggleUnpin = useCallback((itemId: string) => {
@@ -137,10 +145,12 @@ export default function ReportDetailPage() {
   );
 
   const handleApplyToReport = useCallback((content: string) => {
-    setReportMarkdown((prev) => prev + "\n\n" + content);
+    const newMarkdown = reportMarkdown + "\n\n" + content;
+    setReportMarkdown(newMarkdown);
+    updatePulseReportMarkdown(reportId, newMarkdown).catch(() => {});
     setToast("Content applied to report");
     setTimeout(() => setToast(null), 3000);
-  }, []);
+  }, [reportId, reportMarkdown]);
 
   if (loading) {
     return (

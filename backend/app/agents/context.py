@@ -1,6 +1,14 @@
+import hashlib
 import random
 
 from app.services.mock_data import AGENTS, AGENT_MODES, AGENT_SUBJECTS
+
+
+def _seeded_random(agent_id: str, subject: str | None, mode: str) -> random.Random:
+    seed_str = f"{agent_id}:{subject or ''}:{mode}"
+    seed = int(hashlib.sha256(seed_str.encode()).hexdigest()[:8], 16)
+    return random.Random(seed)
+
 
 _ROLE_PROFILES = [
     {
@@ -108,25 +116,26 @@ def build_context(agent_id: str, subject: str | None, mode: str) -> str:
 
 def _get_sample_data_context(agent_id: str, subject: str | None) -> str:
     """Return narrative data context for the LLM to invent realistic numbers."""
+    rng = _seeded_random(agent_id, subject, "data")
     if agent_id == "agent-1on1":
-        return _employee_data_context(subject or "Employee")
+        return _employee_data_context(subject or "Employee", rng)
     elif agent_id == "agent-executive":
-        return _executive_data_context(subject or "Company-wide")
+        return _executive_data_context(subject or "Company-wide", rng)
     elif agent_id == "agent-recurring":
-        return _recurring_data_context()
+        return _recurring_data_context(rng)
     elif agent_id == "agent-team-health":
-        return _team_health_data_context(subject or "Team")
+        return _team_health_data_context(subject or "Team", rng)
     return ""
 
 
-def _employee_data_context(employee: str) -> str:
-    profile = random.choice(_ROLE_PROFILES)
-    hours = random.choice(_METRIC_RANGES["meeting_hours"])
-    resp = random.choice(_METRIC_RANGES["response_rate"])
-    speedy = random.choice(_METRIC_RANGES["speedy_adoption"])
-    external = random.choice(_METRIC_RANGES["external_pct"])
-    after_hrs = random.choice(_METRIC_RANGES["after_hours"])
-    top_cat = random.choice(["Decision Making", "Planning", "Supporting Individuals", "Alignment"])
+def _employee_data_context(employee: str, rng: random.Random) -> str:
+    profile = rng.choice(_ROLE_PROFILES)
+    hours = rng.choice(_METRIC_RANGES["meeting_hours"])
+    resp = rng.choice(_METRIC_RANGES["response_rate"])
+    speedy = rng.choice(_METRIC_RANGES["speedy_adoption"])
+    external = rng.choice(_METRIC_RANGES["external_pct"])
+    after_hrs = rng.choice(_METRIC_RANGES["after_hours"])
+    top_cat = rng.choice(["Decision Making", "Planning", "Supporting Individuals", "Alignment"])
 
     return (
         f"Analyse meeting patterns for {employee}, a {profile['role']}. "
@@ -141,13 +150,18 @@ def _employee_data_context(employee: str) -> str:
     )
 
 
-def _executive_data_context(scope: str) -> str:
-    profile = random.choice(_EXEC_PROFILES)
-    growth_dir = random.choice(["accelerating", "decelerating", "stable", "volatile"])
-    standout_metric = random.choice([
-        "after-hours surge", "quality score decline", "large meeting creep",
-        "cross-team cost imbalance", "agenda usage drop",
-    ])
+def _executive_data_context(scope: str, rng: random.Random) -> str:
+    profile = rng.choice(_EXEC_PROFILES)
+    growth_dir = rng.choice(["accelerating", "decelerating", "stable", "volatile"])
+    standout_metric = rng.choice(
+        [
+            "after-hours surge",
+            "quality score decline",
+            "large meeting creep",
+            "cross-team cost imbalance",
+            "agenda usage drop",
+        ]
+    )
 
     return (
         f"Produce a weekly executive digest for scope '{scope}'. "
@@ -160,18 +174,22 @@ def _executive_data_context(scope: str) -> str:
     )
 
 
-def _recurring_data_context() -> str:
-    profile = random.choice(_RECURRING_PROFILES)
-    quality = random.choice([
-        ("45-55%", "below peer median"),
-        ("55-65%", "near peer median"),
-        ("65-75%", "above peer median"),
-    ])
-    verdict_mix = random.choice([
-        "majority Keep with few Optimise actions",
-        "balanced mix of Keep, Merge, and Eliminate",
-        "several Eliminate and Shorten candidates",
-    ])
+def _recurring_data_context(rng: random.Random) -> str:
+    profile = rng.choice(_RECURRING_PROFILES)
+    quality = rng.choice(
+        [
+            ("45-55%", "below peer median"),
+            ("55-65%", "near peer median"),
+            ("65-75%", "above peer median"),
+        ]
+    )
+    verdict_mix = rng.choice(
+        [
+            "majority Keep with few Optimise actions",
+            "balanced mix of Keep, Merge, and Eliminate",
+            "several Eliminate and Shorten candidates",
+        ]
+    )
 
     return (
         f"Audit recurring meetings for this user over the past 90 days. "
@@ -185,11 +203,19 @@ def _recurring_data_context() -> str:
     )
 
 
-def _team_health_data_context(team: str) -> str:
-    profile = random.choice(_TEAM_PROFILES)
-    avg_hrs = random.choice(["16-22 hrs", "22-28 hrs", "28-35 hrs"])
-    after_hrs = random.choice(["moderate (20-35 hrs team total)", "elevated (35-55 hrs team total)", "high (55-70 hrs team total)"])
-    collab = random.choice(["strong technical collaboration", "healthy cross-team engagement", "emerging silo risks"])
+def _team_health_data_context(team: str, rng: random.Random) -> str:
+    profile = rng.choice(_TEAM_PROFILES)
+    avg_hrs = rng.choice(["16-22 hrs", "22-28 hrs", "28-35 hrs"])
+    after_hrs = rng.choice(
+        [
+            "moderate (20-35 hrs team total)",
+            "elevated (35-55 hrs team total)",
+            "high (55-70 hrs team total)",
+        ]
+    )
+    collab = rng.choice(
+        ["strong technical collaboration", "healthy cross-team engagement", "emerging silo risks"]
+    )
 
     return (
         f"Perform a team health check for the {team} team. "

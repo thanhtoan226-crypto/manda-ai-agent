@@ -5,7 +5,11 @@ from typing import Optional
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from app.core.llm import get_llm, get_llm_streaming, is_llm_configured
-from app.agents.learning_prompts import LEARNING_SYSTEM_PROMPT, build_topic_prompt, MODULE_CONTEXT_HINTS
+from app.agents.learning_prompts import (
+    LEARNING_SYSTEM_PROMPT,
+    build_topic_prompt,
+    MODULE_CONTEXT_HINTS,
+)
 from app.schemas.learning import (
     TopicMeta,
     LearningModule,
@@ -15,7 +19,12 @@ from app.schemas.learning import (
     ModuleProgress,
     LearningChatRequest,
 )
-from app.services.content_loader import get_modules, get_topic_meta, get_topic_content, save_topic_content
+from app.services.content_loader import (
+    get_modules,
+    get_topic_meta,
+    get_topic_content,
+    save_topic_content,
+)
 
 LEARNING_PROGRESS: dict[str, bool] = {}
 
@@ -113,13 +122,15 @@ class LearningService:
             total += mod_total
             completed += mod_completed
             pct = int((mod_completed / mod_total) * 100) if mod_total else 0
-            module_summaries.append(ModuleProgress(
-                module_id=mod["id"],
-                module_title=mod["title"],
-                completed=mod_completed,
-                total=mod_total,
-                progress_percent=pct,
-            ))
+            module_summaries.append(
+                ModuleProgress(
+                    module_id=mod["id"],
+                    module_title=mod["title"],
+                    completed=mod_completed,
+                    total=mod_total,
+                    progress_percent=pct,
+                )
+            )
 
         overall = int((completed / total) * 100) if total else 0
         return LearningProgressSummary(
@@ -136,7 +147,9 @@ class LearningService:
                 try:
                     context_hint = MODULE_CONTEXT_HINTS.get(mod["id"], "")
                     messages = [
-                        SystemMessage(content=f"{LEARNING_SYSTEM_PROMPT}\n\nContext: {context_hint}"),
+                        SystemMessage(
+                            content=f"{LEARNING_SYSTEM_PROMPT}\n\nContext: {context_hint}"
+                        ),
                         HumanMessage(
                             content=build_topic_prompt(
                                 mod["title"],
@@ -164,7 +177,7 @@ class LearningService:
             topic_meta = get_topic_meta(request.topic_id)
             topic_md = get_topic_content(request.topic_id)
             if topic_meta:
-                context = f"\n\n--- Current Topic Context ---\n"
+                context = "\n\n--- Current Topic Context ---\n"
                 context += f"Module: {topic_meta.get('module_id', '')}\n"
                 context += f"Topic: {topic_meta.get('title', '')}\n"
                 context += f"Learning Objective: {topic_meta.get('learning_objective', '')}\n"
@@ -194,6 +207,7 @@ class LearningService:
                     return
                 except Exception as e:
                     import logging
+
                     logging.getLogger(__name__).warning(f"LLM streaming failed: {e}")
 
         # Mock fallback

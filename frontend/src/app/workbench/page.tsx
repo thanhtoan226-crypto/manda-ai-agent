@@ -220,6 +220,11 @@ function WorkbenchContent() {
           if (chunk.type === "module" && chunk.module) {
             setModules((prev) => [...prev, chunk.module as ContentModule]);
           }
+          if (chunk.type === "report_status") {
+            const msg = chunk.message || (chunk.is_fallback ? "Report saved (mock data)" : "Report saved");
+            setToast(msg);
+            setTimeout(() => setToast(null), 4000);
+          }
         }, subject);
         const detail = await fetchSession(activeSessionId);
         setModules(detail.modules ?? []);

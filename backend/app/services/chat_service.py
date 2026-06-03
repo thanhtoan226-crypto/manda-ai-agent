@@ -2,7 +2,7 @@ import uuid
 import json
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
@@ -10,7 +10,6 @@ from app.core.llm import get_llm, get_llm_streaming, is_llm_configured
 from app.agents.prompts import get_prompt, get_module_specs
 from app.agents.context import build_context
 from app.schemas.chat import ChatRequest, ChatResponse, ChatMessage
-from app.schemas.content import LLMContentModule
 from app.services.mock_data import CHAT_MESSAGES, SESSIONS, CONTENT_MODULES, AGENT_MODULES
 
 
@@ -45,6 +44,29 @@ _ANTI_ANCHORING = (
 )
 
 
+def _personalize_mock_json(raw_json: str, subject: str | None = None) -> str:
+    if not subject:
+        return raw_json
+    raw_json = raw_json.replace("Chris Petersen", subject).replace(
+        "Chris", subject.split()[0] if subject.split() else subject
+    )
+    raw_json = raw_json.replace("99.2%", "87.4%").replace("62.5", "54.8")
+    raw_json = raw_json.replace("49.9%", "42.3%").replace("37.3%", "31.6%")
+    raw_json = raw_json.replace("79.4", "68.2").replace("52.7", "48.3")
+    raw_json = raw_json.replace("38.5%", "33.2%").replace("23.7%", "18.4%")
+    raw_json = raw_json.replace("Google", "CloudCo").replace("Atlassian", "TechPartners")
+    raw_json = raw_json.replace("Searce", "OffshoreDev").replace("AvePoint", "DataSys")
+    raw_json = raw_json.replace("Due Diligence stakeholder stand up", "Strategy Review")
+    raw_json = raw_json.replace("Due Diligence", "Strategy Review")
+    raw_json = raw_json.replace("ETech Weekly Wednesday Update", "Platform Weekly Sync")
+    raw_json = raw_json.replace("ETech", "Platform")
+    raw_json = raw_json.replace("SETI JPD refinement", "Product Roadmap Review")
+    raw_json = raw_json.replace("SETI JPD", "Product Roadmap")
+    raw_json = raw_json.replace("Apps Team Standup", "Team Standup")
+    raw_json = raw_json.replace("REA Group", "Acme Corp")
+    return raw_json
+
+
 class ChatService:
     async def process_message(self, request: ChatRequest) -> ChatResponse:
         conversation_id = request.conversation_id or str(uuid.uuid4())
@@ -56,7 +78,7 @@ class ChatService:
                 "id": msg_id,
                 "role": "user",
                 "content": request.message,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
             CHAT_MESSAGES[session_id].append(user_msg)
 
@@ -70,7 +92,7 @@ class ChatService:
                 "id": f"msg-{uuid.uuid4().hex[:8]}",
                 "role": "assistant",
                 "content": response_text,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
             CHAT_MESSAGES[session_id].append(assistant_msg)
 
@@ -94,22 +116,24 @@ class ChatService:
                 "id": msg_id,
                 "role": "user",
                 "content": request.message,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
             CHAT_MESSAGES[session_id].append(user_msg)
 
             if is_llm_configured():
-                full_response = ""
+                chunks: list[str] = []
                 async for chunk in self._llm_stream(request):
-                    full_response += chunk
+                    chunks.append(chunk)
                     data = json.dumps({"type": "text", "content": chunk})
                     yield f"data: {data}\n\n"
+
+                full_response = "".join(chunks)
 
                 assistant_msg = {
                     "id": f"msg-{uuid.uuid4().hex[:8]}",
                     "role": "assistant",
                     "content": full_response,
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
                 CHAT_MESSAGES[session_id].append(assistant_msg)
             else:
@@ -127,7 +151,7 @@ class ChatService:
                     "id": f"msg-{uuid.uuid4().hex[:8]}",
                     "role": "assistant",
                     "content": response_text,
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
                 CHAT_MESSAGES[session_id].append(assistant_msg)
 
@@ -144,9 +168,9 @@ class ChatService:
         conversation_id = request.conversation_id or str(uuid.uuid4())
 
         if is_llm_configured():
-            full_response = ""
+            chunks: list[str] = []
             async for chunk in self._llm_stream(request):
-                full_response += chunk
+                chunks.append(chunk)
                 data = json.dumps({"type": "text", "content": chunk})
                 yield f"data: {data}\n\n"
         else:
@@ -165,7 +189,10 @@ class ChatService:
 
     async def stream_initial_content(self, session_id: str, mode: str, subject: str | None = None):
         """Stream initial content modules when a mode is selected."""
-        # If we have a subject, always regenerate — pre-populated mock content
+        session = next((s for s in SESSIONS if s["id"] == session_id), None)
+        agent_id = session["agent_id"] if session else "agent-1on1"
+
+        # If subject provided, always regenerate — pre-populated mock content
         # won't match the selected subject regardless of LLM configuration
         if subject:
             CONTENT_MODULES.pop(session_id, None)
@@ -178,11 +205,10 @@ class ChatService:
                 if s["id"] == session_id:
                     s["mode"] = mode
                     break
+            async for event in self._report_status_events(agent_id, mode, subject):
+                yield event
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
             return
-
-        session = next((s for s in SESSIONS if s["id"] == session_id), None)
-        agent_id = session["agent_id"] if session else "agent-1on1"
 
         if session_id not in CONTENT_MODULES:
             CONTENT_MODULES[session_id] = []
@@ -192,27 +218,8 @@ class ChatService:
                 yield event
         else:
             modules_to_use = AGENT_MODULES.get(agent_id, AGENT_MODULES["agent-1on1"])
-            # Personalize mock data with subject name if provided
             if subject:
-                raw = json.dumps(modules_to_use)
-                raw = raw.replace("Chris Petersen", subject).replace(
-                    "Chris", subject.split()[0] if subject.split() else subject
-                )
-                # Replace Chris-specific metric anchors with generic values
-                raw = raw.replace("99.2%", "87.4%").replace("62.5", "54.8")
-                raw = raw.replace("49.9%", "42.3%").replace("37.3%", "31.6%")
-                raw = raw.replace("79.4", "68.2").replace("52.7", "48.3")
-                raw = raw.replace("38.5%", "33.2%").replace("23.7%", "18.4%")
-                raw = raw.replace("Google", "CloudCo").replace("Atlassian", "TechPartners")
-                raw = raw.replace("Searce", "OffshoreDev").replace("AvePoint", "DataSys")
-                raw = raw.replace("Due Diligence stakeholder stand up", "Strategy Review")
-                raw = raw.replace("Due Diligence", "Strategy Review")
-                raw = raw.replace("ETech Weekly Wednesday Update", "Platform Weekly Sync")
-                raw = raw.replace("ETech", "Platform")
-                raw = raw.replace("SETI JPD refinement", "Product Roadmap Review")
-                raw = raw.replace("SETI JPD", "Product Roadmap")
-                raw = raw.replace("Apps Team Standup", "Team Standup")
-                raw = raw.replace("REA Group", "Acme Corp")
+                raw = _personalize_mock_json(json.dumps(modules_to_use), subject)
                 modules_to_use = json.loads(raw)
             for module in modules_to_use:
                 CONTENT_MODULES[session_id].append(module)
@@ -225,26 +232,40 @@ class ChatService:
                 s["mode"] = mode
                 break
 
+        # Generate a Pulse report BEFORE sending done so the frontend receives it
+        async for event in self._report_status_events(agent_id, mode, subject):
+            yield event
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
-        # Fire-and-forget: generate a full Pulse report and save to disk
-        if is_llm_configured():
-            try:
-                from app.services.report_generator import generate_and_save_report
+    async def _report_status_events(self, agent_id: str, mode: str, subject: str | None = None):
+        """Generate a Pulse report and yield SSE status events."""
+        try:
+            from app.services.report_generator import generate_and_save_report
 
-                task = asyncio.create_task(
-                    generate_and_save_report(agent_id=agent_id, mode=mode, subject=subject)
-                )
-
-                def _handle_task_result(t: asyncio.Task) -> None:
-                    if t.cancelled():
-                        return
-                    if t.exception():
-                        logger.error("Background report generation failed: %s", t.exception())
-
-                task.add_done_callback(_handle_task_result)
-            except Exception:
-                logger.exception("Failed to start background report generation")
+            report = await generate_and_save_report(agent_id=agent_id, mode=mode, subject=subject)
+            is_fallback = report.get("is_fallback", False)
+            status_data = json.dumps(
+                {
+                    "type": "report_status",
+                    "status": "saved",
+                    "report_id": report.get("id", ""),
+                    "is_fallback": is_fallback,
+                    "message": "Report saved"
+                    if not is_fallback
+                    else "Report saved (mock data — LLM unavailable)",
+                }
+            )
+            yield f"data: {status_data}\n\n"
+        except Exception as e:
+            logger.error("Report generation failed: %s", e)
+            error_data = json.dumps(
+                {
+                    "type": "report_status",
+                    "status": "error",
+                    "message": f"Report generation failed: {e}",
+                }
+            )
+            yield f"data: {error_data}\n\n"
 
     # --- LLM helpers ---
 
@@ -326,7 +347,7 @@ The module must be a JSON object with this exact structure:
   "title": "{spec.title}",
   "chips": [{", ".join(f'{{"id": "{c.id}", "label": "{c.label}"}}' for c in spec.chips)}],
   "content": {{
-    {chr(10)    + "    ".join(f'"{c.id}": <content for {c.label}>,' for c in spec.chips)}
+    {chr(10) + "    ".join(f'"{c.id}": <content for {c.label}>,' for c in spec.chips)}
   }}
 }}
 
@@ -350,7 +371,11 @@ Respond with ONLY the JSON object, no markdown fences, no explanation."""
                 for attempt in range(3):
                     try:
                         result = await llm.ainvoke(messages)
-                        raw = result.content if isinstance(result.content, str) else str(result.content)
+                        raw = (
+                            result.content
+                            if isinstance(result.content, str)
+                            else str(result.content)
+                        )
                         break
                     except Exception as e:
                         if "429" in str(e) and attempt < 2:
@@ -388,7 +413,10 @@ Respond with ONLY the JSON object, no markdown fences, no explanation."""
 
                 # Ensure chips have enabled field
                 for chip in module_dict.get("chips", []):
-                    chip.setdefault("enabled", chip.get("id", "").endswith("-data") or chip.get("id") == "chip-data")
+                    chip.setdefault(
+                        "enabled",
+                        chip.get("id", "").endswith("-data") or chip.get("id") == "chip-data",
+                    )
 
                 CONTENT_MODULES[session_id].append(module_dict)
                 data = json.dumps({"type": "module", "module": module_dict})
@@ -399,28 +427,8 @@ Respond with ONLY the JSON object, no markdown fences, no explanation."""
                 mock_modules = AGENT_MODULES.get(agent_id, AGENT_MODULES["agent-1on1"])
                 mock_module = next((m for m in mock_modules if m["id"] == spec.id), None)
                 if mock_module:
-                    # Personalize mock data with subject name and de-anchor from Chris
                     module_copy = json.loads(json.dumps(mock_module))
-                    raw_m = json.dumps(module_copy)
-                    if subject:
-                        raw_m = raw_m.replace("Chris Petersen", subject).replace(
-                            "Chris", subject.split()[0] if subject.split() else subject
-                        )
-                    # Replace Chris-specific metric anchors with generic values
-                    raw_m = raw_m.replace("99.2%", "87.4%").replace("62.5", "54.8")
-                    raw_m = raw_m.replace("49.9%", "42.3%").replace("37.3%", "31.6%")
-                    raw_m = raw_m.replace("79.4", "68.2").replace("52.7", "48.3")
-                    raw_m = raw_m.replace("38.5%", "33.2%").replace("23.7%", "18.4%")
-                    raw_m = raw_m.replace("Google", "CloudCo").replace("Atlassian", "TechPartners")
-                    raw_m = raw_m.replace("Searce", "OffshoreDev").replace("AvePoint", "DataSys")
-                    raw_m = raw_m.replace("Due Diligence stakeholder stand up", "Strategy Review")
-                    raw_m = raw_m.replace("Due Diligence", "Strategy Review")
-                    raw_m = raw_m.replace("ETech Weekly Wednesday Update", "Platform Weekly Sync")
-                    raw_m = raw_m.replace("ETech", "Platform")
-                    raw_m = raw_m.replace("SETI JPD refinement", "Product Roadmap Review")
-                    raw_m = raw_m.replace("SETI JPD", "Product Roadmap")
-                    raw_m = raw_m.replace("Apps Team Standup", "Team Standup")
-                    raw_m = raw_m.replace("REA Group", "Acme Corp")
+                    raw_m = _personalize_mock_json(json.dumps(module_copy), subject)
                     module_copy = json.loads(raw_m)
                     CONTENT_MODULES[session_id].append(module_copy)
                     data = json.dumps({"type": "module", "module": module_copy})

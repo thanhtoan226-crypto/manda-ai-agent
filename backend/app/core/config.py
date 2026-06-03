@@ -14,12 +14,10 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
 
-    # LLM (OpenRouter / OpenAI-compatible)
-    OPENROUTER_API_KEY: str = ""
-    OPENROUTER_MODEL: str = "moonshotai/kimi-k2.6:free"
+    # LLM (OpenAI-compatible API)
     LLM_API_KEY: str = ""
-    LLM_BASE_URL: str = "https://openrouter.ai/api/v1"
-    LLM_MODEL: str = "moonshotai/kimi-k2.6:free"
+    LLM_BASE_URL: str = "https://api.z.ai/api/paas/v4/"
+    LLM_MODEL: str = "glm-5.1"
     LLM_TIMEOUT: int = 60
     LLM_MAX_TOKENS: int = 4096
 

@@ -60,6 +60,7 @@ def _load_reports() -> dict[str, dict]:
             "markdown": post.content,
             "created_at": post.get("created_at", ""),
             "updated_at": post.get("updated_at", ""),
+            "is_fallback": post.get("is_fallback", False),
         }
 
     _reports_cache = cache
@@ -89,6 +90,25 @@ def update_report_status(report_id: str, status: str) -> Optional[dict]:
         if post.get("id", filepath.stem) == report_id:
             post["status"] = status
             post["updated_at"] = datetime.now(timezone.utc).isoformat()
+            filepath.write_text(frontmatter.dumps(post), encoding="utf-8")
+            break
+
+    return report
+
+
+def update_report_markdown(report_id: str, markdown: str) -> Optional[dict]:
+    cache = _load_reports()
+    report = cache.get(report_id)
+    if not report:
+        return None
+    report["markdown"] = markdown
+    report["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+    for filepath in DATA_DIR.glob("*.md"):
+        post = frontmatter.load(filepath)
+        if post.get("id", filepath.stem) == report_id:
+            post.content = markdown
+            post["updated_at"] = report["updated_at"]
             filepath.write_text(frontmatter.dumps(post), encoding="utf-8")
             break
 
@@ -132,6 +152,7 @@ def save_report(frontmatter_dict: dict, markdown_body: str) -> dict:
         "markdown": markdown_body,
         "created_at": frontmatter_dict.get("created_at", ""),
         "updated_at": frontmatter_dict.get("updated_at", ""),
+        "is_fallback": frontmatter_dict.get("is_fallback", False),
     }
 
     cache = _load_reports()

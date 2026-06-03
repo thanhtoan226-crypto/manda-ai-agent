@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
+import { cn, badgeClass } from "@/lib/utils";
+import { AGENT_CONFIGS, type AgentConfig } from "@/lib/agent-config";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -16,65 +17,7 @@ import {
 import type { ContentModule } from "@/types/session";
 import MetricsCardGrid from "./MetricsCardGrid";
 
-interface AgentConfig {
-  tableHeaders: { key: string; label: string }[];
-  badgeLabels: { cost: string; alignment: string };
-}
-
-const PULSE_AGENT_CONFIGS: Record<string, AgentConfig> = {
-  "agent-1on1": {
-    tableHeaders: [
-      { key: "meeting", label: "Meeting" },
-      { key: "hours", label: "Frequency" },
-      { key: "cost", label: "Cost" },
-      { key: "intent", label: "Attendees" },
-      { key: "alignment", label: "Priority" },
-    ],
-    badgeLabels: { cost: "Cost", alignment: "Priority" },
-  },
-  "agent-executive": {
-    tableHeaders: [
-      { key: "meeting", label: "Team" },
-      { key: "hours", label: "Hrs/Employee" },
-      { key: "cost", label: "Cost" },
-      { key: "intent", label: "Large Meeting %" },
-      { key: "alignment", label: "Health" },
-    ],
-    badgeLabels: { cost: "Cost", alignment: "Health" },
-  },
-  "agent-recurring": {
-    tableHeaders: [
-      { key: "meeting", label: "Meeting" },
-      { key: "hours", label: "Frequency" },
-      { key: "cost", label: "Cost" },
-      { key: "intent", label: "Avg Attendees" },
-      { key: "alignment", label: "Verdict" },
-    ],
-    badgeLabels: { cost: "Cost", alignment: "Verdict" },
-  },
-  "agent-team-health": {
-    tableHeaders: [
-      { key: "meeting", label: "Member" },
-      { key: "hours", label: "Meeting Hours" },
-      { key: "cost", label: "Load" },
-      { key: "intent", label: "After-Hours" },
-      { key: "alignment", label: "Status" },
-    ],
-    badgeLabels: { cost: "Load", alignment: "Status" },
-  },
-};
-
-const DEFAULT_AGENT_CONFIG = PULSE_AGENT_CONFIGS["agent-1on1"];
-
-function badgeClass(value: string | undefined) {
-  if (!value) return "bg-slate-100 text-slate-700";
-  const lower = value.toLowerCase();
-  if (["high", "keep", "overloaded"].includes(lower)) return "bg-red-100 text-red-700";
-  if (["medium", "merge", "above avg"].includes(lower)) return "bg-yellow-100 text-yellow-700";
-  if (["low", "eliminate", "under-utilised"].includes(lower)) return "bg-green-100 text-green-700";
-  if (["optimal"].includes(lower)) return "bg-emerald-100 text-emerald-700";
-  return "bg-slate-100 text-slate-700";
-}
+const DEFAULT_AGENT_CONFIG = AGENT_CONFIGS["agent-1on1"];
 
 function PulseItemBlock({
   itemId,
@@ -286,7 +229,7 @@ export default function PulseModuleView({
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
   const [errorItemId, setErrorItemId] = useState<string | null>(null);
 
-  const config = PULSE_AGENT_CONFIGS[agentId] || DEFAULT_AGENT_CONFIG;
+  const config = AGENT_CONFIGS[agentId] || DEFAULT_AGENT_CONFIG;
 
   const handleDrillDown = useCallback(
     async (itemId: string, chipId: string, itemIndex: number) => {

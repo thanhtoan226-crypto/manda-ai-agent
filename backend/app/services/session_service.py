@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import datetime, timezone
 from typing import Optional
 
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -7,11 +8,22 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from app.core.llm import get_llm, is_llm_configured
 from app.agents.prompts import get_prompt
 from app.agents.context import build_context
-from app.schemas.session import SessionSummary, SessionListResponse, SessionDetail, ContentModule, ChipInfo
+from app.schemas.session import (
+    SessionSummary,
+    SessionListResponse,
+    SessionDetail,
+    ContentModule,
+    ChipInfo,
+)
 from app.schemas.report import PinnedItem, PinRequest
 from app.services.mock_data import (
-    SESSIONS, CONTENT_MODULES, PINNED_ITEMS, CHAT_MESSAGES, REPORTS,
-    create_session as _create_session, DRILL_DOWN_CONTENT,
+    SESSIONS,
+    CONTENT_MODULES,
+    PINNED_ITEMS,
+    CHAT_MESSAGES,
+    REPORTS,
+    create_session as _create_session,
+    DRILL_DOWN_CONTENT,
 )
 
 
@@ -20,9 +32,7 @@ class SessionService:
         sessions = SESSIONS
         if agent_id:
             sessions = [s for s in sessions if s["agent_id"] == agent_id]
-        return SessionListResponse(
-            sessions=[SessionSummary(**s) for s in sessions]
-        )
+        return SessionListResponse(sessions=[SessionSummary(**s) for s in sessions])
 
     async def get_session(self, session_id: str) -> Optional[SessionDetail]:
         session = next((s for s in SESSIONS if s["id"] == session_id), None)
@@ -32,16 +42,21 @@ class SessionService:
         messages = CHAT_MESSAGES.get(session_id, [])
         return SessionDetail(
             **session,
-            modules=[ContentModule(
-                id=m["id"],
-                title=m["title"],
-                chips=[ChipInfo(**c) for c in m["chips"]],
-                content=m["content"],
-            ) for m in modules],
+            modules=[
+                ContentModule(
+                    id=m["id"],
+                    title=m["title"],
+                    chips=[ChipInfo(**c) for c in m["chips"]],
+                    content=m["content"],
+                )
+                for m in modules
+            ],
             messages=messages,
         )
 
-    async def create_session(self, agent_id: str, title: Optional[str] = None, subject: Optional[str] = None) -> SessionDetail:
+    async def create_session(
+        self, agent_id: str, title: Optional[str] = None, subject: Optional[str] = None
+    ) -> SessionDetail:
         session = _create_session(agent_id, title, subject)
         return SessionDetail(
             **session,
@@ -62,8 +77,11 @@ class SessionService:
         )
         # Check if already pinned
         existing = next(
-            (p for p in PINNED_ITEMS[session_id]
-             if p["module_id"] == request.module_id and p["chip_id"] == request.chip_id),
+            (
+                p
+                for p in PINNED_ITEMS[session_id]
+                if p["module_id"] == request.module_id and p["chip_id"] == request.chip_id
+            ),
             None,
         )
         if existing:
@@ -105,7 +123,9 @@ class SessionService:
             return DRILL_DOWN_CONTENT.get(chip_id)
 
         messages = [
-            SystemMessage(content=f"{prompt_config.system_prompt}\n\n{context}\n\nProvide a deeper drill-down analysis of the following insight. Expand on the data, add context, and suggest specific actions."),
+            SystemMessage(
+                content=f"{prompt_config.system_prompt}\n\n{context}\n\nProvide a deeper drill-down analysis of the following insight. Expand on the data, add context, and suggest specific actions."
+            ),
             HumanMessage(content=f"Drill deeper into this insight:\n\n{chip_content}"),
         ]
         result = await llm.ainvoke(messages)
@@ -118,7 +138,11 @@ class SessionService:
             content = module.get("content", {})
             if chip_id in content:
                 chip_data = content[chip_id]
-                return json.dumps(chip_data, indent=2) if isinstance(chip_data, dict) else str(chip_data)
+                return (
+                    json.dumps(chip_data, indent=2)
+                    if isinstance(chip_data, dict)
+                    else str(chip_data)
+                )
         return None
 
     async def apply_chat(self, session_id: str, content: str) -> bool:
@@ -126,6 +150,5 @@ class SessionService:
             return False
         report = REPORTS[session_id]
         report["markdown"] += f"\n\n{content}"
-        from datetime import datetime
-        report["updated_at"] = datetime.now().isoformat()
+        report["updated_at"] = datetime.now(timezone.utc).isoformat()
         return True

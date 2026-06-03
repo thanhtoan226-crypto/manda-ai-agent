@@ -1,14 +1,25 @@
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
-from app.schemas.session import SessionListResponse, SessionDetail, SessionCreateRequest, ApplyChatRequest
+from app.schemas.session import (
+    SessionListResponse,
+    SessionDetail,
+    SessionCreateRequest,
+    ApplyChatRequest,
+)
 from app.schemas.report import PinRequest, PinnedItem
 from app.services.session_service import SessionService
 from app.services.chat_service import ChatService
+from app.services.mock_data import AGENT_MODES
 
 router = APIRouter()
+
+_VALID_MODES: set[str] = set()
+for _modes in AGENT_MODES.values():
+    for _m in _modes:
+        _VALID_MODES.add(_m["id"])
 
 
 @router.get("/", response_model=SessionListResponse)
@@ -48,7 +59,11 @@ async def get_pinned(session_id: str):
 
 
 @router.put("/{session_id}/mode")
-async def set_mode(session_id: str, mode: str):
+async def set_mode(session_id: str, mode: str = Query(..., description="Conversation mode")):
+    if mode not in _VALID_MODES:
+        raise HTTPException(
+            status_code=400, detail=f"Invalid mode: {mode}. Must be one of: {sorted(_VALID_MODES)}"
+        )
     service = SessionService()
     result = await service.set_mode(session_id, mode)
     if not result:

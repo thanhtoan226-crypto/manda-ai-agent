@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 from pydantic import BaseModel
 
 
@@ -33,7 +33,14 @@ class ContentModule(BaseModel):
     id: str
     title: str
     chips: list[ChipInfo]
-    content: dict
+    content: dict[str, Any]
+
+
+class ChatMessageSchema(BaseModel):
+    id: str
+    role: str
+    content: str
+    timestamp: Optional[str] = None
 
 
 class SessionDetail(BaseModel):
@@ -45,7 +52,7 @@ class SessionDetail(BaseModel):
     preview: str
     mode: Optional[str] = None
     modules: list[ContentModule]
-    messages: list[dict]
+    messages: list[ChatMessageSchema]
 
 
 class ApplyChatRequest(BaseModel):

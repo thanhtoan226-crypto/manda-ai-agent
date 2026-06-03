@@ -11,7 +11,9 @@ class ReportService:
             return None
         return ReportResponse(**report)
 
-    async def update_report(self, session_id: str, request: ReportUpdateRequest) -> Optional[ReportResponse]:
+    async def update_report(
+        self, session_id: str, request: ReportUpdateRequest
+    ) -> Optional[ReportResponse]:
         report = REPORTS.get(session_id)
         if not report:
             return None

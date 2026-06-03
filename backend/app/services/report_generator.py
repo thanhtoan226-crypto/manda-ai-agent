@@ -4,15 +4,15 @@ import re
 import uuid
 from datetime import datetime, timezone
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from app.agents.context import build_context
 from app.agents.prompts import get_prompt
-from app.core.llm import get_llm
+from app.core.llm import get_llm, is_llm_configured
 from app.services.md_parser import parse_report_modules
 from app.services.mock_data import AGENTS
 from app.services.report_loader import is_protected_report, save_report
-from app.services.template_loader import get_template, get_template_body_sanitized
+from app.services.template_loader import get_template_body_sanitized
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,6 @@ async def generate_report_md(agent_id: str, mode: str, subject: str | None = Non
     Returns the markdown body (no frontmatter).
     """
     template_body = get_template_body_sanitized(agent_id)
-    template_full = get_template(agent_id)
     prompt_config = get_prompt(agent_id, mode)
     context = build_context(agent_id, subject, mode)
     agent_name = AGENT_NAME_MAP.get(agent_id, "Manda Agent")
@@ -116,7 +115,9 @@ line — start with the subtitle line like "Prepared ...")."""
 
     messages = [
         SystemMessage(content=system_prompt),
-        HumanMessage(content=f"Generate a {agent_name} report in {prompt_config.tone} tone for {mode} mode. Generation ID: {uuid.uuid4().hex[:8]}. Produce entirely original content — do not reproduce patterns from any previous report."),
+        HumanMessage(
+            content=f"Generate a {agent_name} report in {prompt_config.tone} tone for {mode} mode. Generation ID: {uuid.uuid4().hex[:8]}. Produce entirely original content — do not reproduce patterns from any previous report."
+        ),
     ]
 
     # Retry up to 3 times on rate limit errors
@@ -128,7 +129,9 @@ line — start with the subtitle line like "Prepared ...")."""
         except Exception as e:
             if "429" in str(e) and attempt < max_retries - 1:
                 wait = 2 ** (attempt + 1)
-                logger.warning("Rate limited, retrying in %ds (attempt %d/%d)", wait, attempt + 1, max_retries)
+                logger.warning(
+                    "Rate limited, retrying in %ds (attempt %d/%d)", wait, attempt + 1, max_retries
+                )
                 await asyncio.sleep(wait)
             else:
                 raise
@@ -143,25 +146,33 @@ line — start with the subtitle line like "Prepared ...")."""
     return md_body.strip()
 
 
-async def generate_and_save_report(
-    agent_id: str,
-    mode: str,
-    subject: str | None = None,
+def _generate_mock_report_md(agent_id: str, subject: str | None = None) -> str:
+    """Generate a fallback report using the template when LLM is unavailable."""
+    try:
+        md_body = get_template_body_sanitized(agent_id)
+    except (ValueError, FileNotFoundError):
+        md_body = f"## Report\n\nGenerated report for {agent_id}."
+
+    if subject:
+        md_body = md_body.replace("[NAME]", subject)
+        first_name = subject.split()[0] if subject.split() else subject
+        md_body = md_body.replace("[NAME]'s", f"{first_name}'s")
+    else:
+        md_body = md_body.replace("[NAME]", DEFAULT_SUBJECTS.get(agent_id, "User"))
+
+    md_body = md_body.replace("[MEETING]", "Weekly Sync")
+    md_body = md_body.replace("[VENDOR]", "PartnerOrg")
+    md_body = md_body.replace("[COMPANY]", "Acme Corp")
+    md_body = md_body.replace("[COST]", "$0")
+    md_body = md_body.replace("[METRIC]", "0.0")
+
+    return md_body
+
+
+def _build_report_dict(
+    agent_id: str, subject: str | None, md_body: str, is_fallback: bool = False
 ) -> dict:
-    """Generate a report via LLM, save it to disk, return the report dict with modules."""
-    # Check for protected reports — never regenerate (e.g., Chris Peterson)
-    if agent_id == "agent-1on1" and subject:
-        filename = f"1on1-prep-brief-{subject.replace(' ', '-')}.md"
-        if is_protected_report(filename):
-            from app.services.report_loader import get_report
-
-            logger.info("Skipping generation for protected report: %s", filename)
-            existing = get_report("pulse-1")
-            if existing:
-                return existing
-
-    md_body = await generate_report_md(agent_id, mode, subject)
-
+    """Build a report dict with frontmatter, save to disk, and parse modules."""
     report_id = f"pulse-{uuid.uuid4().hex[:8]}"
     agent_name = AGENT_NAME_MAP.get(agent_id, "Manda Agent")
     category = AGENT_REPORT_CATEGORY.get(agent_id, "Meetings")
@@ -185,12 +196,18 @@ async def generate_and_save_report(
         "preview": preview,
         "created_at": timestamp,
         "updated_at": timestamp,
+        "is_fallback": is_fallback,
     }
 
     report = save_report(frontmatter_dict, md_body)
-    logger.info("Generated and saved report %s for %s (%s)", report_id, agent_id, display_subject)
+    logger.info(
+        "Generated and saved report %s for %s (%s)%s",
+        report_id,
+        agent_id,
+        display_subject,
+        " [FALLBACK]" if is_fallback else "",
+    )
 
-    # Parse the saved markdown into structured modules
     try:
         modules = parse_report_modules(md_body, agent_id, title)
         report["modules"] = [
@@ -206,3 +223,32 @@ async def generate_and_save_report(
         report["modules"] = None
 
     return report
+
+
+async def generate_and_save_report(
+    agent_id: str,
+    mode: str,
+    subject: str | None = None,
+) -> dict:
+    """Generate a report via LLM (with mock fallback), save to disk, return the report dict."""
+    if agent_id == "agent-1on1" and subject:
+        filename = f"1on1-prep-brief-{subject.replace(' ', '-')}.md"
+        if is_protected_report(filename):
+            from app.services.report_loader import get_report
+
+            logger.info("Skipping generation for protected report: %s", filename)
+            existing = get_report("pulse-1")
+            if existing:
+                return existing
+
+    if not is_llm_configured():
+        md_body = _generate_mock_report_md(agent_id, subject)
+        return _build_report_dict(agent_id, subject, md_body, is_fallback=True)
+
+    try:
+        md_body = await generate_report_md(agent_id, mode, subject)
+        return _build_report_dict(agent_id, subject, md_body, is_fallback=False)
+    except Exception as e:
+        logger.warning("LLM report generation failed for %s: %s — using mock fallback", agent_id, e)
+        md_body = _generate_mock_report_md(agent_id, subject)
+        return _build_report_dict(agent_id, subject, md_body, is_fallback=True)

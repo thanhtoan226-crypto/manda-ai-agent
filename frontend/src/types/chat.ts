@@ -1,7 +1,6 @@
-export interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-}
+import type { ChatMessage } from "./session";
+
+export type { ChatMessage };
 
 export interface ChatRequest {
   message: string;

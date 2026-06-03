@@ -22,7 +22,9 @@ class PulseService:
                 report["modules"] = modules
                 return report
             except Exception:
-                logger.warning("MD parser failed for %s, falling back to AGENT_MODULES", report.get("id"))
+                logger.warning(
+                    "MD parser failed for %s, falling back to AGENT_MODULES", report.get("id")
+                )
 
         # Fallback to AGENT_MODULES if parsing fails or no markdown
         if agent_id and agent_id in AGENT_MODULES:
@@ -30,7 +32,9 @@ class PulseService:
             modules = []
             for m in raw_modules:
                 chips = [ChipInfo(**c) for c in m.get("chips", [])]
-                modules.append(ContentModule(id=m["id"], title=m["title"], chips=chips, content=m["content"]))
+                modules.append(
+                    ContentModule(id=m["id"], title=m["title"], chips=chips, content=m["content"])
+                )
             report["modules"] = modules
         return report
 
@@ -63,6 +67,12 @@ class PulseService:
 
     async def update_status(self, report_id: str, status: str) -> Optional[PulseReportInfo]:
         report = report_loader.update_report_status(report_id, status)
+        if not report:
+            return None
+        return PulseReportInfo(**self._enrich_with_modules(report))
+
+    async def update_markdown(self, report_id: str, markdown: str) -> Optional[PulseReportInfo]:
+        report = report_loader.update_report_markdown(report_id, markdown)
         if not report:
             return None
         return PulseReportInfo(**self._enrich_with_modules(report))

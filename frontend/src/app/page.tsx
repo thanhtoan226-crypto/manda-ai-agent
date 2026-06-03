@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Activity } from "lucide-react";
 import AgentCarousel from "@/components/AgentCarousel";
@@ -24,19 +24,7 @@ export default function AgentHub() {
       .catch(console.error)
       .finally(() => setLoading(false));
 
-    fetchPulseReports()
-      .then((res) => {
-        const sorted = (res.reports as PulseReport[]).sort(
-          (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-        );
-        setRecentReports(sorted.slice(0, 8));
-      })
-      .catch(console.error);
-  }, []);
-
-  // Refetch reports when tab regains focus so newly generated reports appear
-  useEffect(() => {
-    const handleFocus = () => {
+    const loadReports = () => {
       fetchPulseReports()
         .then((res) => {
           const sorted = (res.reports as PulseReport[]).sort(
@@ -46,8 +34,47 @@ export default function AgentHub() {
         })
         .catch(console.error);
     };
+
+    loadReports();
+
+    // If navigated back from workbench after report generation, refetch immediately
+    const flag = sessionStorage.getItem("manda_report_generated");
+    if (flag) {
+      sessionStorage.removeItem("manda_report_generated");
+      loadReports();
+    }
+  }, []);
+
+  // Refetch reports when tab regains focus so newly generated reports appear
+  useEffect(() => {
+    const loadReports = () => {
+      fetchPulseReports()
+        .then((res) => {
+          const sorted = (res.reports as PulseReport[]).sort(
+            (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+          );
+          setRecentReports(sorted.slice(0, 8));
+        })
+        .catch(console.error);
+    };
+
+    const handleFocus = () => {
+      const flag = sessionStorage.getItem("manda_report_generated");
+      if (flag) {
+        sessionStorage.removeItem("manda_report_generated");
+      }
+      loadReports();
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") handleFocus();
+    };
+
     window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   const handleRun = useCallback(
@@ -80,10 +107,10 @@ export default function AgentHub() {
     });
   };
 
-  const popular = [...agents].sort((a, b) => b.usage_count - a.usage_count);
-  const salesPerformance = agents.filter((a) => a.category === "People Management");
-  const marketIntelligence = agents.filter((a) => a.category === "Leadership & Strategy");
-  const clientSuccess = agents.filter((a) => a.category === "Productivity & Efficiency");
+  const popular = useMemo(() => [...agents].sort((a, b) => b.usage_count - a.usage_count), [agents]);
+  const salesPerformance = useMemo(() => agents.filter((a) => a.category === "People Management"), [agents]);
+  const marketIntelligence = useMemo(() => agents.filter((a) => a.category === "Leadership & Strategy"), [agents]);
+  const clientSuccess = useMemo(() => agents.filter((a) => a.category === "Productivity & Efficiency"), [agents]);
 
   if (loading) {
     return (

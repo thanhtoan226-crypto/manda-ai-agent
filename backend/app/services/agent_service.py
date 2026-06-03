@@ -5,9 +5,7 @@ from app.services.mock_data import AGENTS, AGENT_MODES
 
 class AgentService:
     async def list_agents(self) -> AgentListResponse:
-        return AgentListResponse(
-            agents=[AgentInfo(**a) for a in AGENTS]
-        )
+        return AgentListResponse(agents=[AgentInfo(**a) for a in AGENTS])
 
     async def get_agent(self, agent_id: str) -> Optional[AgentDetailResponse]:
         agent = next((a for a in AGENTS if a["id"] == agent_id), None)

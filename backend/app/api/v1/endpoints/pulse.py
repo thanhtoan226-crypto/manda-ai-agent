@@ -21,6 +21,10 @@ class ActionRequest(BaseModel):
     item_index: int = 0
 
 
+class MarkdownUpdateRequest(BaseModel):
+    markdown: str
+
+
 @router.get("/reports", response_model=PulseReportListResponse)
 async def list_reports(
     status: Optional[str] = Query(None),
@@ -49,7 +53,9 @@ async def generate_report(request: GenerateReportRequest):
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         if "429" in str(e):
-            raise HTTPException(status_code=503, detail="Rate limit exceeded. Please try again later.")
+            raise HTTPException(
+                status_code=503, detail="Rate limit exceeded. Please try again later."
+            )
         raise
 
     if not report:
@@ -73,6 +79,15 @@ async def get_report(report_id: str):
 async def update_report_status(report_id: str, body: PulseReportStatusUpdate):
     service = PulseService()
     report = await service.update_status(report_id, body.status)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return report
+
+
+@router.put("/reports/{report_id}/markdown", response_model=PulseReportInfo)
+async def update_report_markdown(report_id: str, body: MarkdownUpdateRequest):
+    service = PulseService()
+    report = await service.update_markdown(report_id, body.markdown)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
     return report

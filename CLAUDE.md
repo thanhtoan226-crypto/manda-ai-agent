@@ -59,7 +59,7 @@ backend/app/
 backend/data/learning/    # Learning content: modules.json + 30 topic MD files with YAML frontmatter
 ```
 
-Services are instantiated per-request. When `OPENROUTER_API_KEY` is set, chat and content generation use real LLM calls via OpenRouter (OpenAI-compatible, default model `moonshotai/kimi-k2.6:free`). Falls back to `LLM_API_KEY` if OpenRouter is not configured. When neither is set, all responses fall back to mock data from `mock_data.py`. All state is in-memory — no database yet.
+Services are instantiated per-request. When `LLM_API_KEY` is set, chat and content generation use real LLM calls via the configured OpenAI-compatible API (default: z.ai with `glm-5.1`). When not set, all responses fall back to mock data from `mock_data.py`. All state is in-memory — no database yet.
 
 ### Learning Content Architecture
 - **Source of truth**: MD files in `backend/data/learning/` (one per topic, with YAML frontmatter for metadata)
@@ -88,7 +88,7 @@ Services are instantiated per-request. When `OPENROUTER_API_KEY` is set, chat an
 - **Drill-down**: `POST /reports/{id}/drill-down` — SSE stream via `PulseActionService.stream_drill_down()`, LLM-powered with mock fallback
 - **Verify**: `POST /reports/{id}/verify` — SSE stream via `PulseActionService.stream_verify()`, LLM-powered with mock fallback
 - **Chat**: `POST /reports/{id}/chat/stream` — SSE stream via `ChatService.stream_message_for_agent()`, LLM-powered with mock fallback
-- **Session flow**: After workbench streams modules, `ChatService.stream_initial_content()` fire-and-forget calls `generate_and_save_report()` to persist a Pulse report in the background
+- **Session flow**: After workbench streams modules, `ChatService.stream_initial_content()` awaits `generate_and_save_report()` to persist a Pulse report; status surfaced via SSE `report_status` event
 - **Subject passing**: `selectedSubject` flows from MainCanvas → workbench page → `streamContent()` API → backend `sessions.py` → `chat_service.py` → `build_context()` + `generate_and_save_report()`. The LLM prompt includes the employee/team name so generated reports are personalized.
 - **Frontend**: All three actions use SSE streaming with progressive text rendering. No frontend mock fallbacks — errors display with retry UI.
 
@@ -160,7 +160,7 @@ All feature specs are in `docs/features/`:
 - `pulse-agents/team-health-check.md` — Team Health Check flow and report structure
 - `modes.md` — Intent modes per agent with tone/framing guidance
 
-Mock data schemas are in `docs/data/`. Pulse reports are in `backend/data/reports/` (MD files with YAML frontmatter). When `OPENROUTER_API_KEY` or `LLM_API_KEY` is configured, mock data serves as fallback, not the primary source.
+Mock data schemas are in `docs/data/`. Pulse reports are in `backend/data/reports/` (MD files with YAML frontmatter). When `LLM_API_KEY` is configured, mock data serves as fallback, not the primary source.
 
 ## Agents
 
@@ -178,7 +178,7 @@ Report categories: People & Culture, Meetings, Wellness, Compliance
 
 ## Current State
 
-- AI responses use real LLM integration (OpenRouter via langchain-openai). Set `OPENROUTER_API_KEY` in `.env` to enable (model: `moonshotai/kimi-k2.6:free`); falls back to `LLM_API_KEY` if OpenRouter not set; falls back to backend mock data when neither is set.
+- AI responses use real LLM integration (z.ai via langchain-openai). Set `LLM_API_KEY` in `.env` to enable (model: `glm-5.1`); falls back to backend mock data when not set.
 - Report generation uses templates from `docs/data/` as structural references. The LLM generates varied content (different numbers AND insights). Reports saved as MD files to `backend/data/reports/` via `report_generator.py`. Chris Peterson's report is protected — never regenerated.
 - Context builder (`agents/context.py`) uses narrative directives instead of hardcoded data — tells the LLM what to invent rather than providing fixed numbers.
 - Pulse reports served from `backend/data/reports/` MD files via `report_loader.py`. Reports enriched with structured module data via `md_parser.py`. Frontend has no mock fallback — requires running backend.
@@ -189,6 +189,6 @@ Report categories: People & Culture, Meetings, Wellness, Compliance
 - No authentication, no database migrations, no real Google Docs export
 - Backend `models/`, `tools/`, `utils/` directories are empty
 - Test directories exist but have no tests
-- LLM env vars: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_TIMEOUT`, `LLM_MAX_TOKENS`
+- LLM env vars: `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_TIMEOUT`, `LLM_MAX_TOKENS`
 - Report generator has rate-limit retry (3 attempts, exponential backoff) for free-tier LLM APIs
 - Protected reports: `1on1-prep-brief-Chris-Peterson.md` is never regenerated. `PROTECTED_REPORTS` set in `report_loader.py` controls this.

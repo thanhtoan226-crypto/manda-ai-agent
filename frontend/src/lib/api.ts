@@ -206,7 +206,7 @@ export async function streamChat(
 export async function streamContent(
   sessionId: string,
   mode: string,
-  onChunk?: (data: { type: string; module?: unknown }) => void,
+  onChunk?: (data: { type: string; module?: unknown; report_id?: string; is_fallback?: boolean; message?: string }) => void,
   subject?: string | null
 ): Promise<void> {
   const params = new URLSearchParams({ mode });
@@ -215,7 +215,10 @@ export async function streamContent(
     method: "POST",
   });
   await consumeSSE(res, (data) => {
-    onChunk?.(data as { type: string; module?: unknown });
+    if (data.type === "report_status" && data.status === "saved") {
+      sessionStorage.setItem("manda_report_generated", Date.now().toString());
+    }
+    onChunk?.(data as { type: string; module?: unknown; report_id?: string; is_fallback?: boolean; message?: string });
   });
 }
 
@@ -245,6 +248,17 @@ export async function updatePulseReportStatus(
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status }),
+  });
+}
+
+export async function updatePulseReportMarkdown(
+  reportId: string,
+  markdown: string
+): Promise<PulseReport | null> {
+  return apiFetch(`/pulse/reports/${reportId}/markdown`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ markdown }),
   });
 }
 

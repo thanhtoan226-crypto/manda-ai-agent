@@ -1,12 +1,12 @@
-from typing import Optional
-from pydantic import BaseModel
+from typing import Literal, Optional
+from pydantic import BaseModel, Field
 
 
 class ScheduleRequest(BaseModel):
-    frequency: str  # daily, weekly, bi-weekly, monthly
+    frequency: Literal["daily", "weekly", "bi-weekly", "monthly"]
     day_of_week: Optional[str] = None
-    time: str
-    recipients: str  # comma-separated emails
+    time: str = Field(pattern=r"^\d{2}:\d{2}$")
+    recipients: str = Field(min_length=1)
 
 
 class ScheduleResponse(BaseModel):

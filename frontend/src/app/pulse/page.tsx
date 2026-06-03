@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { Activity, Inbox, Archive, Eye, Filter, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { REPORT_CATEGORIES } from "@/lib/mock-pulse-data";
+import { REPORT_CATEGORIES } from "@/lib/constants";
 import type { ReportCategory } from "@/types/pulse";
 import { fetchPulseReports } from "@/lib/api";
 import PulseReportCard from "@/components/PulseReportCard";

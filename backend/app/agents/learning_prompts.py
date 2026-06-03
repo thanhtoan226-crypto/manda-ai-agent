@@ -29,7 +29,9 @@ Topic format:
 [2-3 questions to check understanding]"""
 
 
-def build_topic_prompt(module_title: str, topic_title: str, learning_objective: str, estimated_minutes: int) -> str:
+def build_topic_prompt(
+    module_title: str, topic_title: str, learning_objective: str, estimated_minutes: int
+) -> str:
     """Build the human message for topic content generation."""
     return f"""Generate educational content for the topic "{topic_title}" \
 in the module "{module_title}".

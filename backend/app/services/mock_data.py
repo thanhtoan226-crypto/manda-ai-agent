@@ -69,27 +69,87 @@ AGENTS = [
 
 AGENT_MODES = {
     "agent-1on1": [
-        {"id": "coaching", "label": "Coaching & Support", "description": "Strengths-first, warm tone, for growth and wellbeing"},
-        {"id": "performance", "label": "Performance Review Prep", "description": "Evidence-based, balanced, for formal reviews"},
-        {"id": "workload", "label": "Workload Concern", "description": "Volume/trend data, caring but factual, for capacity signals"},
-        {"id": "investigation", "label": "Investigation", "description": "Direct/factual, data-driven, for engagement concerns"},
+        {
+            "id": "coaching",
+            "label": "Coaching & Support",
+            "description": "Strengths-first, warm tone, for growth and wellbeing",
+        },
+        {
+            "id": "performance",
+            "label": "Performance Review Prep",
+            "description": "Evidence-based, balanced, for formal reviews",
+        },
+        {
+            "id": "workload",
+            "label": "Workload Concern",
+            "description": "Volume/trend data, caring but factual, for capacity signals",
+        },
+        {
+            "id": "investigation",
+            "label": "Investigation",
+            "description": "Direct/factual, data-driven, for engagement concerns",
+        },
     ],
     "agent-executive": [
-        {"id": "talent", "label": "Talent Focus", "description": "People-centric signals: engagement, burnout risk, 1-on-1 coverage"},
-        {"id": "board-ready", "label": "Board-Ready", "description": "Executive summary with key metrics, trends, and cost impact"},
-        {"id": "capacity", "label": "Capacity Review", "description": "Workload distribution, meeting overload, and resource utilisation"},
-        {"id": "risk", "label": "Risk Assessment", "description": "Red flags: declining quality, attendance drops, compliance gaps"},
+        {
+            "id": "talent",
+            "label": "Talent Focus",
+            "description": "People-centric signals: engagement, burnout risk, 1-on-1 coverage",
+        },
+        {
+            "id": "board-ready",
+            "label": "Board-Ready",
+            "description": "Executive summary with key metrics, trends, and cost impact",
+        },
+        {
+            "id": "capacity",
+            "label": "Capacity Review",
+            "description": "Workload distribution, meeting overload, and resource utilisation",
+        },
+        {
+            "id": "risk",
+            "label": "Risk Assessment",
+            "description": "Red flags: declining quality, attendance drops, compliance gaps",
+        },
     ],
     "agent-recurring": [
-        {"id": "cost", "label": "Cost Optimisation", "description": "Focus on time and money waste, consolidation opportunities"},
-        {"id": "quality", "label": "Quality Review", "description": "Focus on agenda usage, purpose clarity, and desired outcomes"},
-        {"id": "attendance", "label": "Attendance & Engagement", "description": "Focus on declining rates, no-response patterns, and participation"},
+        {
+            "id": "cost",
+            "label": "Cost Optimisation",
+            "description": "Focus on time and money waste, consolidation opportunities",
+        },
+        {
+            "id": "quality",
+            "label": "Quality Review",
+            "description": "Focus on agenda usage, purpose clarity, and desired outcomes",
+        },
+        {
+            "id": "attendance",
+            "label": "Attendance & Engagement",
+            "description": "Focus on declining rates, no-response patterns, and participation",
+        },
     ],
     "agent-team-health": [
-        {"id": "coaching", "label": "Coaching & Support", "description": "Team morale and wellbeing focus, strengths-first framing"},
-        {"id": "performance", "label": "Performance Review", "description": "Team metrics vs benchmarks, evaluative comparison"},
-        {"id": "workload", "label": "Workload Concern", "description": "Capacity and burnout signals across the team"},
-        {"id": "investigation", "label": "Investigation", "description": "Engagement and participation patterns, direct factual framing"},
+        {
+            "id": "coaching",
+            "label": "Coaching & Support",
+            "description": "Team morale and wellbeing focus, strengths-first framing",
+        },
+        {
+            "id": "performance",
+            "label": "Performance Review",
+            "description": "Team metrics vs benchmarks, evaluative comparison",
+        },
+        {
+            "id": "workload",
+            "label": "Workload Concern",
+            "description": "Capacity and burnout signals across the team",
+        },
+        {
+            "id": "investigation",
+            "label": "Investigation",
+            "description": "Engagement and participation patterns, direct factual framing",
+        },
     ],
 }
 
@@ -197,16 +257,66 @@ MODULES_1ON1 = [
         "content": {
             "chip-data": {
                 "metrics": [
-                    {"label": "Monthly meeting hours", "value": "62.5", "median": "66.4", "position": "Middle of pack (43rd of 69)"},
-                    {"label": "% of working time in meetings", "value": "38.5%", "median": "35.4%", "position": "Slightly above median"},
-                    {"label": "Meetings per month", "value": "118", "median": "129", "position": "Below median"},
-                    {"label": "Top meeting category", "value": "Alignment (49.9%)", "median": "—", "position": "Heavy alignment load"},
-                    {"label": "Outside-hours meetings", "value": "0.5 hrs", "median": "—", "position": "Minimal - positive signal"},
-                    {"label": "Meetings organised (% of total)", "value": "39%", "median": "—", "position": "Active organiser"},
-                    {"label": "Response rate to invitations", "value": "99.2%", "median": "80.2%", "position": "Top of cohort"},
-                    {"label": "External meeting %", "value": "23.7%", "median": "—", "position": "Above typical for EM role"},
-                    {"label": "Speedy meeting adoption", "value": "37.3%", "median": "22.7%", "position": "Above peer median"},
-                    {"label": "Large meeting % (8+ attendees)", "value": "37.3%", "median": "28.3%", "position": "Above median"},
+                    {
+                        "label": "Monthly meeting hours",
+                        "value": "62.5",
+                        "median": "66.4",
+                        "position": "Middle of pack (43rd of 69)",
+                    },
+                    {
+                        "label": "% of working time in meetings",
+                        "value": "38.5%",
+                        "median": "35.4%",
+                        "position": "Slightly above median",
+                    },
+                    {
+                        "label": "Meetings per month",
+                        "value": "118",
+                        "median": "129",
+                        "position": "Below median",
+                    },
+                    {
+                        "label": "Top meeting category",
+                        "value": "Alignment (49.9%)",
+                        "median": "—",
+                        "position": "Heavy alignment load",
+                    },
+                    {
+                        "label": "Outside-hours meetings",
+                        "value": "0.5 hrs",
+                        "median": "—",
+                        "position": "Minimal - positive signal",
+                    },
+                    {
+                        "label": "Meetings organised (% of total)",
+                        "value": "39%",
+                        "median": "—",
+                        "position": "Active organiser",
+                    },
+                    {
+                        "label": "Response rate to invitations",
+                        "value": "99.2%",
+                        "median": "80.2%",
+                        "position": "Top of cohort",
+                    },
+                    {
+                        "label": "External meeting %",
+                        "value": "23.7%",
+                        "median": "—",
+                        "position": "Above typical for EM role",
+                    },
+                    {
+                        "label": "Speedy meeting adoption",
+                        "value": "37.3%",
+                        "median": "22.7%",
+                        "position": "Above peer median",
+                    },
+                    {
+                        "label": "Large meeting % (8+ attendees)",
+                        "value": "37.3%",
+                        "median": "28.3%",
+                        "position": "Above median",
+                    },
                 ],
                 "text": "Chris is a **solid performer** vs. peers across most metrics. Exceptional response rate and speedy meeting adoption stand out as clear strengths.",
             },
@@ -249,33 +359,120 @@ MODULES_1ON1 = [
                 ],
                 "table": [
                     {"meeting": "Alignment", "hours": "31.2", "cost": "49.9%", "intent": "61"},
-                    {"meeting": "Supporting Individuals", "hours": "11.6", "cost": "18.5%", "intent": "22"},
+                    {
+                        "meeting": "Supporting Individuals",
+                        "hours": "11.6",
+                        "cost": "18.5%",
+                        "intent": "22",
+                    },
                     {"meeting": "Decision Making", "hours": "5.5", "cost": "8.8%", "intent": "12"},
-                    {"meeting": "Learning & Sharing", "hours": "5.5", "cost": "8.8%", "intent": "8"},
+                    {
+                        "meeting": "Learning & Sharing",
+                        "hours": "5.5",
+                        "cost": "8.8%",
+                        "intent": "8",
+                    },
                     {"meeting": "Planning", "hours": "3.9", "cost": "6.3%", "intent": "6"},
                     {"meeting": "Uncategorised", "hours": "2.6", "cost": "4.1%", "intent": "6"},
                     {"meeting": "Evaluation", "hours": "1.2", "cost": "1.9%", "intent": "2"},
-                    {"meeting": "Fostering Connections", "hours": "1.0", "cost": "1.6%", "intent": "1"},
+                    {
+                        "meeting": "Fostering Connections",
+                        "hours": "1.0",
+                        "cost": "1.6%",
+                        "intent": "1",
+                    },
                 ],
             },
             "chip-meetings": {
                 "table": [
-                    {"meeting": "Due Diligence stakeholder stand up", "hours": "Weekly", "cost": "~$5,700/mo", "intent": "33-35", "alignment": "High"},
-                    {"meeting": "ETech Weekly Wednesday Update", "hours": "Weekly", "cost": "~$3,400/mo", "intent": "42", "alignment": "Medium"},
-                    {"meeting": "SETI JPD refinement", "hours": "Recurring", "cost": "~$1,500/occ", "intent": "12", "alignment": "High"},
-                    {"meeting": "Apps Team Standup", "hours": "Weekly", "cost": "~$1,800/mo", "intent": "11", "alignment": "Medium"},
-                    {"meeting": "ETech Apps Stand up (2026)", "hours": "Weekly", "cost": "~$2,200/mo", "intent": "12", "alignment": "Medium"},
-                    {"meeting": "Enterprise App Leads Weekly", "hours": "Weekly", "cost": "~$760/mo", "intent": "4", "alignment": "High"},
-                    {"meeting": "Apps Team: JPD Prioritisation", "hours": "Weekly", "cost": "~$1,640/mo", "intent": "9", "alignment": "Medium"},
+                    {
+                        "meeting": "Due Diligence stakeholder stand up",
+                        "hours": "Weekly",
+                        "cost": "~$5,700/mo",
+                        "intent": "33-35",
+                        "alignment": "High",
+                    },
+                    {
+                        "meeting": "ETech Weekly Wednesday Update",
+                        "hours": "Weekly",
+                        "cost": "~$3,400/mo",
+                        "intent": "42",
+                        "alignment": "Medium",
+                    },
+                    {
+                        "meeting": "SETI JPD refinement",
+                        "hours": "Recurring",
+                        "cost": "~$1,500/occ",
+                        "intent": "12",
+                        "alignment": "High",
+                    },
+                    {
+                        "meeting": "Apps Team Standup",
+                        "hours": "Weekly",
+                        "cost": "~$1,800/mo",
+                        "intent": "11",
+                        "alignment": "Medium",
+                    },
+                    {
+                        "meeting": "ETech Apps Stand up (2026)",
+                        "hours": "Weekly",
+                        "cost": "~$2,200/mo",
+                        "intent": "12",
+                        "alignment": "Medium",
+                    },
+                    {
+                        "meeting": "Enterprise App Leads Weekly",
+                        "hours": "Weekly",
+                        "cost": "~$760/mo",
+                        "intent": "4",
+                        "alignment": "High",
+                    },
+                    {
+                        "meeting": "Apps Team: JPD Prioritisation",
+                        "hours": "Weekly",
+                        "cost": "~$1,640/mo",
+                        "intent": "9",
+                        "alignment": "Medium",
+                    },
                 ],
             },
             "chip-organized": {
                 "table": [
-                    {"meeting": "Apps Team Standup", "hours": "Weekly", "cost": "11 attendees", "intent": "62%", "alignment": "Medium"},
-                    {"meeting": "Enterprise App Leads Weekly", "hours": "Weekly", "cost": "4 attendees", "intent": "78%", "alignment": "High"},
-                    {"meeting": "Apps Team: JPD Prioritisation", "hours": "Weekly", "cost": "9 attendees", "intent": "98%", "alignment": "High"},
-                    {"meeting": "1:1s with Direct Reports", "hours": "Various", "cost": "1 attendee", "intent": "—", "alignment": "—"},
-                    {"meeting": "Ad-hoc Vendor Coordination", "hours": "Ad-hoc", "cost": "2-4 attendees", "intent": "69%", "alignment": "Medium"},
+                    {
+                        "meeting": "Apps Team Standup",
+                        "hours": "Weekly",
+                        "cost": "11 attendees",
+                        "intent": "62%",
+                        "alignment": "Medium",
+                    },
+                    {
+                        "meeting": "Enterprise App Leads Weekly",
+                        "hours": "Weekly",
+                        "cost": "4 attendees",
+                        "intent": "78%",
+                        "alignment": "High",
+                    },
+                    {
+                        "meeting": "Apps Team: JPD Prioritisation",
+                        "hours": "Weekly",
+                        "cost": "9 attendees",
+                        "intent": "98%",
+                        "alignment": "High",
+                    },
+                    {
+                        "meeting": "1:1s with Direct Reports",
+                        "hours": "Various",
+                        "cost": "1 attendee",
+                        "intent": "—",
+                        "alignment": "—",
+                    },
+                    {
+                        "meeting": "Ad-hoc Vendor Coordination",
+                        "hours": "Ad-hoc",
+                        "cost": "2-4 attendees",
+                        "intent": "69%",
+                        "alignment": "Medium",
+                    },
                 ],
                 "text": "Chris organises **46 meetings (39% of his total)**. Quality score: 65.2% overall. Ad-hoc meetings score higher (69.2%) than recurring ones (62.3%). Agenda usage is low at **17.4%**, though context clarity is high at **91.3%**.\n\nChris's organised meeting quality varies considerably. His JPD Prioritisation meeting stands out with a 98% quality score and consistent agenda usage — this should be the model for his other recurring meetings. The Apps Team Standup scores lowest among his organised meetings, and the lack of agenda (17.4% overall usage) is a drag on quality. The high context clarity (91.3%) suggests Chris communicates purpose well when creating meetings, but doesn't formalise it with agendas. Recommendation: adopt the JPD Prioritisation format (agenda + desired outcomes) as the standard for all meetings he organises.",
             },
@@ -327,16 +524,66 @@ MODULES_EXECUTIVE = [
         "content": {
             "chip-data": {
                 "metrics": [
-                    {"label": "Total meeting cost", "value": "$2,847,500", "median": "$2,410,000", "position": "Above median"},
-                    {"label": "Avg meeting hours per employee", "value": "18.4", "median": "16.2", "position": "Above median"},
-                    {"label": "Meeting growth trend", "value": "+5.1%", "median": "+2.3%", "position": "Above typical for dept"},
-                    {"label": "Large meeting % (8+ attendees)", "value": "28.4%", "median": "24.1%", "position": "Above median"},
-                    {"label": "Avg quality score", "value": "67.4%", "median": "71.2%", "position": "Below median"},
-                    {"label": "Agenda usage", "value": "58.2%", "median": "63.4%", "position": "Below median"},
-                    {"label": "Speedy meeting adoption", "value": "62.3%", "median": "55.8%", "position": "Above peer median"},
-                    {"label": "1-on-1 coverage rate", "value": "74.6%", "median": "82.1%", "position": "Below median"},
-                    {"label": "External meeting %", "value": "23.7%", "median": "19.8%", "position": "Above median"},
-                    {"label": "After-hours meeting hours", "value": "142", "median": "98", "position": "Above median"},
+                    {
+                        "label": "Total meeting cost",
+                        "value": "$2,847,500",
+                        "median": "$2,410,000",
+                        "position": "Above median",
+                    },
+                    {
+                        "label": "Avg meeting hours per employee",
+                        "value": "18.4",
+                        "median": "16.2",
+                        "position": "Above median",
+                    },
+                    {
+                        "label": "Meeting growth trend",
+                        "value": "+5.1%",
+                        "median": "+2.3%",
+                        "position": "Above typical for dept",
+                    },
+                    {
+                        "label": "Large meeting % (8+ attendees)",
+                        "value": "28.4%",
+                        "median": "24.1%",
+                        "position": "Above median",
+                    },
+                    {
+                        "label": "Avg quality score",
+                        "value": "67.4%",
+                        "median": "71.2%",
+                        "position": "Below median",
+                    },
+                    {
+                        "label": "Agenda usage",
+                        "value": "58.2%",
+                        "median": "63.4%",
+                        "position": "Below median",
+                    },
+                    {
+                        "label": "Speedy meeting adoption",
+                        "value": "62.3%",
+                        "median": "55.8%",
+                        "position": "Above peer median",
+                    },
+                    {
+                        "label": "1-on-1 coverage rate",
+                        "value": "74.6%",
+                        "median": "82.1%",
+                        "position": "Below median",
+                    },
+                    {
+                        "label": "External meeting %",
+                        "value": "23.7%",
+                        "median": "19.8%",
+                        "position": "Above median",
+                    },
+                    {
+                        "label": "After-hours meeting hours",
+                        "value": "142",
+                        "median": "98",
+                        "position": "Above median",
+                    },
                 ],
                 "text": "Engineering department shows **moderate concern** — meeting costs are rising above benchmark, 1-on-1 coverage is below median, but speedy meeting adoption is a positive signal.",
             },
@@ -376,11 +623,41 @@ MODULES_EXECUTIVE = [
             },
             "chip-cost-centers": {
                 "table": [
-                    {"meeting": "Platform Team", "hours": "22.1 hrs/emp", "cost": "$890K", "intent": "34% large", "alignment": "Low"},
-                    {"meeting": "DevOps Team", "hours": "21.6 hrs/emp", "cost": "$387K", "intent": "31% large", "alignment": "Low"},
-                    {"meeting": "Frontend Team", "hours": "19.4 hrs/emp", "cost": "$620K", "intent": "28% large", "alignment": "Medium"},
-                    {"meeting": "Backend Team", "hours": "17.8 hrs/emp", "cost": "$540K", "intent": "22% large", "alignment": "Medium"},
-                    {"meeting": "Data Team", "hours": "16.2 hrs/emp", "cost": "$410K", "intent": "19% large", "alignment": "High"},
+                    {
+                        "meeting": "Platform Team",
+                        "hours": "22.1 hrs/emp",
+                        "cost": "$890K",
+                        "intent": "34% large",
+                        "alignment": "Low",
+                    },
+                    {
+                        "meeting": "DevOps Team",
+                        "hours": "21.6 hrs/emp",
+                        "cost": "$387K",
+                        "intent": "31% large",
+                        "alignment": "Low",
+                    },
+                    {
+                        "meeting": "Frontend Team",
+                        "hours": "19.4 hrs/emp",
+                        "cost": "$620K",
+                        "intent": "28% large",
+                        "alignment": "Medium",
+                    },
+                    {
+                        "meeting": "Backend Team",
+                        "hours": "17.8 hrs/emp",
+                        "cost": "$540K",
+                        "intent": "22% large",
+                        "alignment": "Medium",
+                    },
+                    {
+                        "meeting": "Data Team",
+                        "hours": "16.2 hrs/emp",
+                        "cost": "$410K",
+                        "intent": "19% large",
+                        "alignment": "High",
+                    },
                 ],
             },
             "chip-red-flags": {
@@ -407,15 +684,60 @@ MODULES_RECURRING = [
         "content": {
             "chip-data": {
                 "metrics": [
-                    {"label": "Total recurring meetings", "value": "14", "median": "11", "position": "Above median"},
-                    {"label": "Monthly recurring hours", "value": "42.5", "median": "34.2", "position": "Above median"},
-                    {"label": "Monthly recurring cost", "value": "$9,780", "median": "$7,200", "position": "Above median"},
-                    {"label": "% of calendar from recurring", "value": "61.2%", "median": "52.4%", "position": "Heavy recurring load"},
-                    {"label": "Avg meeting size", "value": "6.3", "median": "5.1", "position": "Above median"},
-                    {"label": "Avg quality score", "value": "54.8%", "median": "62.1%", "position": "Below median"},
-                    {"label": "Avg agenda usage", "value": "42.1%", "median": "58.3%", "position": "Below median"},
-                    {"label": "Avg response rate", "value": "72.4%", "median": "81.6%", "position": "Below median"},
-                    {"label": "Meetings with declining attendance", "value": "3", "median": "1", "position": "Above median"},
+                    {
+                        "label": "Total recurring meetings",
+                        "value": "14",
+                        "median": "11",
+                        "position": "Above median",
+                    },
+                    {
+                        "label": "Monthly recurring hours",
+                        "value": "42.5",
+                        "median": "34.2",
+                        "position": "Above median",
+                    },
+                    {
+                        "label": "Monthly recurring cost",
+                        "value": "$9,780",
+                        "median": "$7,200",
+                        "position": "Above median",
+                    },
+                    {
+                        "label": "% of calendar from recurring",
+                        "value": "61.2%",
+                        "median": "52.4%",
+                        "position": "Heavy recurring load",
+                    },
+                    {
+                        "label": "Avg meeting size",
+                        "value": "6.3",
+                        "median": "5.1",
+                        "position": "Above median",
+                    },
+                    {
+                        "label": "Avg quality score",
+                        "value": "54.8%",
+                        "median": "62.1%",
+                        "position": "Below median",
+                    },
+                    {
+                        "label": "Avg agenda usage",
+                        "value": "42.1%",
+                        "median": "58.3%",
+                        "position": "Below median",
+                    },
+                    {
+                        "label": "Avg response rate",
+                        "value": "72.4%",
+                        "median": "81.6%",
+                        "position": "Below median",
+                    },
+                    {
+                        "label": "Meetings with declining attendance",
+                        "value": "3",
+                        "median": "1",
+                        "position": "Above median",
+                    },
                 ],
                 "text": "Your recurring meeting portfolio shows **significant optimization opportunity** — 61.2% of calendar is recurring (above the 52% benchmark), with below-average quality scores and agenda usage.",
             },
@@ -456,13 +778,55 @@ MODULES_RECURRING = [
             },
             "chip-meeting-cards": {
                 "table": [
-                    {"meeting": "Weekly Sprint Sync", "hours": "Weekly (4x/mo)", "cost": "$7,360/mo", "intent": "8 avg", "alignment": "Keep"},
-                    {"meeting": "1-on-1: Direct Reports", "hours": "Weekly (4x/mo)", "cost": "$2,880/mo", "intent": "2 avg", "alignment": "Keep"},
-                    {"meeting": "Team Retrospective", "hours": "Bi-weekly (2x/mo)", "cost": "$1,440/mo", "intent": "6 avg", "alignment": "Keep"},
-                    {"meeting": "Tech Debt Review", "hours": "Weekly (4x/mo)", "cost": "$3,200/mo", "intent": "8 avg", "alignment": "Merge"},
-                    {"meeting": "Cross-team Sync", "hours": "Weekly (4x/mo)", "cost": "$2,560/mo", "intent": "6 avg", "alignment": "Merge"},
-                    {"meeting": "Vendor Alignment", "hours": "Weekly (4x/mo)", "cost": "$1,920/mo", "intent": "5 avg", "alignment": "Keep"},
-                    {"meeting": "'Catch-up'", "hours": "Weekly (4x/mo)", "cost": "$4,800/mo", "intent": "12 avg", "alignment": "Eliminate"},
+                    {
+                        "meeting": "Weekly Sprint Sync",
+                        "hours": "Weekly (4x/mo)",
+                        "cost": "$7,360/mo",
+                        "intent": "8 avg",
+                        "alignment": "Keep",
+                    },
+                    {
+                        "meeting": "1-on-1: Direct Reports",
+                        "hours": "Weekly (4x/mo)",
+                        "cost": "$2,880/mo",
+                        "intent": "2 avg",
+                        "alignment": "Keep",
+                    },
+                    {
+                        "meeting": "Team Retrospective",
+                        "hours": "Bi-weekly (2x/mo)",
+                        "cost": "$1,440/mo",
+                        "intent": "6 avg",
+                        "alignment": "Keep",
+                    },
+                    {
+                        "meeting": "Tech Debt Review",
+                        "hours": "Weekly (4x/mo)",
+                        "cost": "$3,200/mo",
+                        "intent": "8 avg",
+                        "alignment": "Merge",
+                    },
+                    {
+                        "meeting": "Cross-team Sync",
+                        "hours": "Weekly (4x/mo)",
+                        "cost": "$2,560/mo",
+                        "intent": "6 avg",
+                        "alignment": "Merge",
+                    },
+                    {
+                        "meeting": "Vendor Alignment",
+                        "hours": "Weekly (4x/mo)",
+                        "cost": "$1,920/mo",
+                        "intent": "5 avg",
+                        "alignment": "Keep",
+                    },
+                    {
+                        "meeting": "'Catch-up'",
+                        "hours": "Weekly (4x/mo)",
+                        "cost": "$4,800/mo",
+                        "intent": "12 avg",
+                        "alignment": "Eliminate",
+                    },
                 ],
             },
             "chip-recommendations": {
@@ -489,16 +853,66 @@ MODULES_TEAM_HEALTH = [
         "content": {
             "chip-data": {
                 "metrics": [
-                    {"label": "Team size", "value": "12", "median": "10", "position": "Above median"},
-                    {"label": "Avg meeting hours per member", "value": "24.3", "median": "18.4", "position": "Above median"},
-                    {"label": "% of working time in meetings", "value": "38.5%", "median": "29.4%", "position": "Above median"},
-                    {"label": "Team meeting count", "value": "286", "median": "210", "position": "Above median"},
-                    {"label": "Avg quality score", "value": "62.1%", "median": "67.8%", "position": "Below median"},
-                    {"label": "1-on-1 coverage rate", "value": "68.4%", "median": "82.1%", "position": "Below median"},
-                    {"label": "External meeting %", "value": "18.2%", "median": "19.8%", "position": "Slightly Above Median"},
-                    {"label": "After-hours meetings (team total)", "value": "8.5 hrs", "median": "3.2 hrs", "position": "Above median"},
-                    {"label": "Speedy meeting adoption", "value": "55.6%", "median": "55.8%", "position": "Middle of Pack"},
-                    {"label": "Large meeting % (8+ attendees)", "value": "31.2%", "median": "24.1%", "position": "Above median"},
+                    {
+                        "label": "Team size",
+                        "value": "12",
+                        "median": "10",
+                        "position": "Above median",
+                    },
+                    {
+                        "label": "Avg meeting hours per member",
+                        "value": "24.3",
+                        "median": "18.4",
+                        "position": "Above median",
+                    },
+                    {
+                        "label": "% of working time in meetings",
+                        "value": "38.5%",
+                        "median": "29.4%",
+                        "position": "Above median",
+                    },
+                    {
+                        "label": "Team meeting count",
+                        "value": "286",
+                        "median": "210",
+                        "position": "Above median",
+                    },
+                    {
+                        "label": "Avg quality score",
+                        "value": "62.1%",
+                        "median": "67.8%",
+                        "position": "Below median",
+                    },
+                    {
+                        "label": "1-on-1 coverage rate",
+                        "value": "68.4%",
+                        "median": "82.1%",
+                        "position": "Below median",
+                    },
+                    {
+                        "label": "External meeting %",
+                        "value": "18.2%",
+                        "median": "19.8%",
+                        "position": "Slightly Above Median",
+                    },
+                    {
+                        "label": "After-hours meetings (team total)",
+                        "value": "8.5 hrs",
+                        "median": "3.2 hrs",
+                        "position": "Above median",
+                    },
+                    {
+                        "label": "Speedy meeting adoption",
+                        "value": "55.6%",
+                        "median": "55.8%",
+                        "position": "Middle of Pack",
+                    },
+                    {
+                        "label": "Large meeting % (8+ attendees)",
+                        "value": "31.2%",
+                        "median": "24.1%",
+                        "position": "Above median",
+                    },
                 ],
                 "text": "The Platform team shows **elevated meeting load** with below-average quality scores. Meeting hours per member are 32% above the org median, and 1-on-1 coverage is a significant gap.",
             },
@@ -527,7 +941,11 @@ MODULES_TEAM_HEALTH = [
             {"id": "chip-workload", "label": "Workload Distribution", "enabled": False},
             {"id": "chip-1on1-quality", "label": "1-on-1 Coverage & Quality", "enabled": False},
             {"id": "chip-collab", "label": "Collaboration Patterns", "enabled": False},
-            {"id": "chip-discussion", "label": "Discussion Starters for Team Lead", "enabled": False},
+            {
+                "id": "chip-discussion",
+                "label": "Discussion Starters for Team Lead",
+                "enabled": False,
+            },
         ],
         "content": {
             "chip-health-data": {
@@ -540,11 +958,41 @@ MODULES_TEAM_HEALTH = [
             },
             "chip-workload": {
                 "table": [
-                    {"meeting": "Jordan (Lead)", "hours": "31.4 hrs", "cost": "High", "intent": "8 after-hrs", "alignment": "Overloaded"},
-                    {"meeting": "Alex", "hours": "27.8 hrs", "cost": "Medium", "intent": "2 after-hrs", "alignment": "Above avg"},
-                    {"meeting": "Sam", "hours": "24.6 hrs", "cost": "Medium", "intent": "0 after-hrs", "alignment": "Optimal"},
-                    {"meeting": "Riley", "hours": "22.1 hrs", "cost": "Medium", "intent": "1 after-hrs", "alignment": "Optimal"},
-                    {"meeting": "Casey", "hours": "16.2 hrs", "cost": "Low", "intent": "0 after-hrs", "alignment": "Under-utilised"},
+                    {
+                        "meeting": "Jordan (Lead)",
+                        "hours": "31.4 hrs",
+                        "cost": "High",
+                        "intent": "8 after-hrs",
+                        "alignment": "Overloaded",
+                    },
+                    {
+                        "meeting": "Alex",
+                        "hours": "27.8 hrs",
+                        "cost": "Medium",
+                        "intent": "2 after-hrs",
+                        "alignment": "Above avg",
+                    },
+                    {
+                        "meeting": "Sam",
+                        "hours": "24.6 hrs",
+                        "cost": "Medium",
+                        "intent": "0 after-hrs",
+                        "alignment": "Optimal",
+                    },
+                    {
+                        "meeting": "Riley",
+                        "hours": "22.1 hrs",
+                        "cost": "Medium",
+                        "intent": "1 after-hrs",
+                        "alignment": "Optimal",
+                    },
+                    {
+                        "meeting": "Casey",
+                        "hours": "16.2 hrs",
+                        "cost": "Low",
+                        "intent": "0 after-hrs",
+                        "alignment": "Under-utilised",
+                    },
                 ],
             },
             "chip-1on1-quality": {
@@ -704,7 +1152,7 @@ PULSE_REPORTS: list[dict] = [
         "category": "People & Culture",
         "status": "focus",
         "preview": "Exceptional response rate (99.2%) and strong speedy meeting adoption (37.3%) stand out as clear strengths.",
-        "markdown": "# 1:1 Prep Brief: Chris Petersen\n\nPrepared 6 May 2026 — Data from 1 April to 30 April 2026\nMode: Coaching & Support\nPeer Group: 69 Engineering Managers at REA Group\n\n---\n\n## At a Glance\n\n| Metric | Chris | EM Peer Median | Position |\n|--------|-------|----------------|----------|\n| Monthly meeting hours | 62.5 | 66.4 | Middle of pack (43rd of 69) |\n| % of working time in meetings | 38.5% | 35.4% | Slightly above median |\n| Meetings per month | 118 | 129 | Below median |\n| Response rate to invitations | 99.2% | 80.2% | Top of cohort |\n| Speedy meeting adoption | 37.3% | 22.7% | Above peer median |\n\n### Strengths to Acknowledge\n\n- **Exceptional response rate (99.2%)** — Chris responds to almost every meeting invitation he receives\n- **Minimal outside-hours impact** — Only 0.5 hours outside work hours in April\n- **Strong speedy meeting adoption (37.3%)** — Uses 25/50-minute formats more than peers\n- **Good recurring/ad-hoc balance (55/45 split)** — Healthy mix of structured and flexible meetings\n\n### Patterns Worth Discussing\n\n1. Meeting load spiked in March (79.4 hrs) before settling back in April (62.5 hrs)\n2. Almost half meeting time is Alignment (49.9%, 31.2 hours)\n3. Wednesday is the heaviest day (18.3 hrs, 29% of weekly meeting time)\n4. High external meeting engagement (23.7%) across 16 unique companies\n\n## Calendar Deep-Dive\n\n### Top Recurring Time Commitments\n\n| Meeting | Frequency | Attendees | Monthly Cost |\n|---------|-----------|-----------|-------------|\n| Due Diligence stakeholder stand up | Weekly | 33-35 | ~$5,700/month |\n| ETech Weekly Wednesday Update | Weekly | 42 | ~$3,400/month |\n| SETI JPD refinement | Recurring | 12 | ~$1,500/occurrence |\n\n### Discussion Starters\n\n- \"March was significantly busier — was that a one-off project spike, or is there an underlying trend?\"\n- \"You're in several large recurring forums. Do these still need you weekly?\"\n- \"Your external vendor work is quite extensive — is this sustainable?\"\n",
+        "markdown": '# 1:1 Prep Brief: Chris Petersen\n\nPrepared 6 May 2026 — Data from 1 April to 30 April 2026\nMode: Coaching & Support\nPeer Group: 69 Engineering Managers at REA Group\n\n---\n\n## At a Glance\n\n| Metric | Chris | EM Peer Median | Position |\n|--------|-------|----------------|----------|\n| Monthly meeting hours | 62.5 | 66.4 | Middle of pack (43rd of 69) |\n| % of working time in meetings | 38.5% | 35.4% | Slightly above median |\n| Meetings per month | 118 | 129 | Below median |\n| Response rate to invitations | 99.2% | 80.2% | Top of cohort |\n| Speedy meeting adoption | 37.3% | 22.7% | Above peer median |\n\n### Strengths to Acknowledge\n\n- **Exceptional response rate (99.2%)** — Chris responds to almost every meeting invitation he receives\n- **Minimal outside-hours impact** — Only 0.5 hours outside work hours in April\n- **Strong speedy meeting adoption (37.3%)** — Uses 25/50-minute formats more than peers\n- **Good recurring/ad-hoc balance (55/45 split)** — Healthy mix of structured and flexible meetings\n\n### Patterns Worth Discussing\n\n1. Meeting load spiked in March (79.4 hrs) before settling back in April (62.5 hrs)\n2. Almost half meeting time is Alignment (49.9%, 31.2 hours)\n3. Wednesday is the heaviest day (18.3 hrs, 29% of weekly meeting time)\n4. High external meeting engagement (23.7%) across 16 unique companies\n\n## Calendar Deep-Dive\n\n### Top Recurring Time Commitments\n\n| Meeting | Frequency | Attendees | Monthly Cost |\n|---------|-----------|-----------|-------------|\n| Due Diligence stakeholder stand up | Weekly | 33-35 | ~$5,700/month |\n| ETech Weekly Wednesday Update | Weekly | 42 | ~$3,400/month |\n| SETI JPD refinement | Recurring | 12 | ~$1,500/occurrence |\n\n### Discussion Starters\n\n- "March was significantly busier — was that a one-off project spike, or is there an underlying trend?"\n- "You\'re in several large recurring forums. Do these still need you weekly?"\n- "Your external vendor work is quite extensive — is this sustainable?"\n',
         "created_at": (datetime.now() - timedelta(hours=2)).isoformat(),
         "updated_at": (datetime.now() - timedelta(hours=2)).isoformat(),
     },
@@ -819,10 +1267,14 @@ PULSE_REPORTS: list[dict] = [
 ]
 
 
-def create_session(agent_id: str, title: Optional[str] = None, subject: Optional[str] = None) -> dict:
+def create_session(
+    agent_id: str, title: Optional[str] = None, subject: Optional[str] = None
+) -> dict:
     session_id = f"session-{uuid.uuid4().hex[:8]}"
     agent = next((a for a in AGENTS if a["id"] == agent_id), None)
-    session_title = (title or f"New Session — {agent['name']}") if agent else (title or "New Session")
+    session_title = (
+        (title or f"New Session — {agent['name']}") if agent else (title or "New Session")
+    )
     session = {
         "id": session_id,
         "agent_id": agent_id,

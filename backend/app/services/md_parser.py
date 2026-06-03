@@ -120,6 +120,7 @@ def _get_chip_id(agent_id: str, module_id: str, chip_label: str) -> str:
 # Markdown parsing helpers
 # ---------------------------------------------------------------------------
 
+
 def _parse_table(lines: list[str]) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
     """Parse a markdown pipe table into headers and rows."""
     if not lines:
@@ -166,19 +167,23 @@ def _parse_metrics_table(lines: list[str]) -> list[dict[str, str]]:
     for row in rows:
         keys = list(row.keys())
         if len(keys) >= 4:
-            metrics.append({
-                "label": row[keys[0]],
-                "value": row[keys[1]],
-                "median": row[keys[2]],
-                "position": row[keys[3]],
-            })
+            metrics.append(
+                {
+                    "label": row[keys[0]],
+                    "value": row[keys[1]],
+                    "median": row[keys[2]],
+                    "position": row[keys[3]],
+                }
+            )
         elif len(keys) >= 2:
-            metrics.append({
-                "label": row[keys[0]],
-                "value": row[keys[1]],
-                "median": row.get(keys[2], "—"),
-                "position": row.get(keys[3], ""),
-            })
+            metrics.append(
+                {
+                    "label": row[keys[0]],
+                    "value": row[keys[1]],
+                    "median": row.get(keys[2], "—"),
+                    "position": row.get(keys[3], ""),
+                }
+            )
     return metrics
 
 
@@ -276,13 +281,14 @@ def _split_at_llm_feedback(text: str) -> tuple[str, str]:
     """Split text at **LLM Feedback:** marker."""
     match = re.search(r"\*\*LLM Feedback:\*\*", text)
     if match:
-        return text[:match.start()].strip(), text[match.start():].strip()
+        return text[: match.start()].strip(), text[match.start() :].strip()
     return text, ""
 
 
 # ---------------------------------------------------------------------------
 # Chip content parsing
 # ---------------------------------------------------------------------------
+
 
 def _parse_chip_content(
     section_title: str,
@@ -339,10 +345,7 @@ def _parse_data_interpreter(lines: list[str]) -> dict:
 
     if rows and len(headers) >= 3:
         # Check for metrics-style table (has Position or Change column)
-        has_position_col = any(
-            h["label"].lower() in ("position", "change")
-            for h in headers
-        )
+        has_position_col = any(h["label"].lower() in ("position", "change") for h in headers)
         if has_position_col:
             metrics = _parse_metrics_table(lines)
             result: dict = {"metrics": metrics}
@@ -363,6 +366,7 @@ def _parse_data_interpreter(lines: list[str]) -> dict:
 # ---------------------------------------------------------------------------
 # Main parser
 # ---------------------------------------------------------------------------
+
 
 def parse_report_modules(
     markdown_body: str,
@@ -426,8 +430,7 @@ def parse_report_modules(
 
         # Determine Data Interpreter content
         has_pre_chip_content = any(
-            line.strip() and not line.strip().startswith("|")
-            for line in pre_chip_lines
+            line.strip() and not line.strip().startswith("|") for line in pre_chip_lines
         ) or _has_table(pre_chip_lines)
 
         if has_pre_chip_content:
@@ -461,12 +464,14 @@ def parse_report_modules(
             chips.append(ChipInfo(id=chip_id, label=display_label, enabled=False))
             content[chip_id] = chip_content
 
-        modules.append(ContentModule(
-            id=module_id,
-            title=module_title,
-            chips=chips,
-            content=content,
-        ))
+        modules.append(
+            ContentModule(
+                id=module_id,
+                title=module_title,
+                chips=chips,
+                content=content,
+            )
+        )
 
     # Remove "Context and Trends" — not a structured module
     if modules and modules[-1].title.lower().startswith("context and trend"):
