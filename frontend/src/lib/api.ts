@@ -17,6 +17,16 @@ import type {
   TopicMeta,
   LearningProgressSummary,
 } from "@/types/learning";
+import type {
+  MeetingListResponse,
+  Meeting,
+  MeetingCreateRequest,
+  MandaMeetingSettings,
+  MandaMeetingSettingsUpdate,
+  MeetingTemplate,
+  GenerateDescriptionRequest,
+  RewriteDescriptionRequest,
+} from "@/types/meeting";
 
 const API_BASE = "/api/v1";
 
@@ -432,4 +442,95 @@ export async function streamLearningChat(
   await consumeSSE(res, (data) => {
     onChunk?.(data as { type: string; content?: string });
   });
+}
+
+// Meetings
+export async function fetchMeetings(filters?: {
+  time_frame?: string;
+  role?: string;
+  search?: string;
+}): Promise<MeetingListResponse> {
+  const params = new URLSearchParams();
+  if (filters?.time_frame) params.set("time_frame", filters.time_frame);
+  if (filters?.role) params.set("role", filters.role);
+  if (filters?.search) params.set("search", filters.search);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  return apiFetch(`/meetings/${qs}`);
+}
+
+export async function fetchMeeting(meetingId: string): Promise<Meeting> {
+  return apiFetch(`/meetings/${meetingId}`);
+}
+
+export async function createMeeting(request: MeetingCreateRequest): Promise<Meeting> {
+  return apiFetch("/meetings/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export async function deleteMeeting(meetingId: string): Promise<void> {
+  await apiFetch(`/meetings/${meetingId}`, { method: "DELETE" });
+}
+
+export async function streamGenerateDescription(
+  request: GenerateDescriptionRequest,
+  onChunk?: (data: { field?: string; content?: string; type?: string }) => void
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/meetings/generate-description`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  await consumeSSE(res, (data) => {
+    onChunk?.(data as { field?: string; content?: string; type?: string });
+  });
+}
+
+export async function streamRewriteDescription(
+  request: RewriteDescriptionRequest,
+  onChunk?: (data: { field?: string; content?: string; type?: string }) => void
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/meetings/rewrite-description`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  await consumeSSE(res, (data) => {
+    onChunk?.(data as { field?: string; content?: string; type?: string });
+  });
+}
+
+export async function fetchMeetingSettings(): Promise<MandaMeetingSettings> {
+  return apiFetch("/meetings/settings");
+}
+
+export async function updateMeetingSettings(
+  update: MandaMeetingSettingsUpdate
+): Promise<MandaMeetingSettings> {
+  return apiFetch("/meetings/settings", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(update),
+  });
+}
+
+export async function fetchMeetingTemplates(): Promise<MeetingTemplate[]> {
+  return apiFetch("/meetings/templates");
+}
+
+export async function createMeetingTemplate(
+  name: string,
+  content: string
+): Promise<MeetingTemplate> {
+  return apiFetch("/meetings/templates", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, content }),
+  });
+}
+
+export async function deleteMeetingTemplate(templateId: string): Promise<void> {
+  await apiFetch(`/meetings/templates/${templateId}`, { method: "DELETE" });
 }

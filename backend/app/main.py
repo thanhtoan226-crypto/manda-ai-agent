@@ -15,11 +15,17 @@ async def lifespan(app: FastAPI):
         seed_executive_digest_report,
         seed_team_health_check_report,
     )
+    from app.core.database import init_db, seed_meetings, seed_templates, seed_settings
 
     seed_chris_peterson_report()
     seed_recurring_meeting_audit_report()
     seed_executive_digest_report()
     seed_team_health_check_report()
+
+    init_db()
+    seed_meetings()
+    seed_templates()
+    seed_settings()
     yield
 
 

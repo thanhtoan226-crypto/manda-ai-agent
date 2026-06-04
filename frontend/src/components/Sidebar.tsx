@@ -49,6 +49,7 @@ export default function Sidebar({
   const [insightsOpen, setInsightsOpen] = useState(pathname.startsWith("/insights"));
 
   const isAgentsActive = pathname === "/" || pathname.startsWith("/workbench") || pathname.startsWith("/pulse");
+  const isMeetingsActive = pathname.startsWith("/meetings");
 
   return (
     <aside
@@ -96,8 +97,8 @@ export default function Sidebar({
           <NavItem
             icon={Calendar}
             label="My Meetings"
-            href="/coming-soon?title=My Meetings"
-            active={false}
+            href="/meetings"
+            active={isMeetingsActive}
             collapsed={collapsed}
           />
           <NavItem
